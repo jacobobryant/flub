@@ -1,0 +1,19 @@
+{:paths ["src"]
+ :deps
+ {jobryant/util {:local/root "../util"} ;:mvn/version "1.0"}
+  org.clojure/clojure {:mvn/version "1.9.0"}
+  com.datomic/client-cloud {:mvn/version "0.8.71"}
+  com.taoensso/timbre {:mvn/version "4.10.0"}
+  orchestra {:mvn/version "2019.02.06-1"}}
+ :aliases {:jar
+           {:extra-deps {luchiniatwork/cambada {:mvn/version "1.0.0"}}
+            :main-opts ["-m" "cambada.jar"
+                        "--app-group-id" "jobryant"
+                        "--app-artifact-id" "datomic-cloud"
+                        "--app-version" "1.0-SNAPSHOT"]}
+           :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
+                    :main-opts ["-m" "deps-deploy.deps-deploy" "deploy"
+                                "target/datomic-cloud-1.0.jar"]}
+           :install {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
+                     :main-opts ["-m" "deps-deploy.deps-deploy" "install"
+                                 "target/datomic-cloud-1.0-SNAPSHOT.jar"]}}}

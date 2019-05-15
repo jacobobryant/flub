@@ -1,0 +1,8 @@
+{:paths ["src"]
+ :deps
+ {jobryant/util {:mvn/version "1.0"}
+  org.clojure/clojure {:mvn/version "1.9.0"}
+  com.datomic/datomic-free {:mvn/version "0.9.5697"}
+  me.raynes/fs {:mvn/version "1.4.6"}
+  reagent {:mvn/version "0.8.1"}
+  datascript {:mvn/version "0.18.2"}}}
