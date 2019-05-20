@@ -1,6 +1,6 @@
 #!/bin/bash
-"exec" "planck" "-c" "$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)/../planck/src" "$0" "$@"
-(require '[jobryant.planck.util :refer [sh]])
+"exec" "planck" "-c" "$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)/util" "$0" "$@"
+(require '[util.core :refer [sh]])
 (require '[planck.core :refer [read-string]])
 
 (let [[uname] *command-line-args*

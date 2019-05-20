@@ -1,0 +1,76 @@
+#!/bin/bash
+"exec" "planck" "-c" "$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)/util" "$0" "$@"
+(require '[planck.core :as c])
+(require '[planck.shell :refer [with-sh-dir]])
+(require '[util.core :refer [sh shsplit path fexists? sppit]])
+(require '[clojure.set :refer [union difference]])
+(require '[clojure.string :refer [replace]])
+
+(defn get-deps [config lib]
+  (let [local-deps (loop [deps #{}
+                          libs #{lib}]
+                     (if (empty? libs)
+                       deps
+                       (let [local-deps (set (mapcat #(get-in config [:artifacts % :local-deps]) libs))
+                             deps (union deps libs)]
+                         (recur
+                           deps
+                           (difference local-deps deps)))))
+        maven-deps (set (mapcat #(get-in config [:artifacts % :deps]) local-deps))]
+    [local-deps maven-deps]))
+
+(defn mono-reset [config]
+  (let [{:keys [group artifacts managed-deps]} config]
+    (doseq [lib (keys artifacts)]
+      (let [dest (path "target" lib "src" group)
+            [local-deps maven-deps] (get-deps config lib)
+            deps-edn (merge {:paths ["src"]
+                             :deps (select-keys managed-deps maven-deps)}
+                            (select-keys config [:mvn/repos]))
+            lib-edn (merge (select-keys config [:version :group])
+                           {:artifact (str lib)})]
+        (sh "rm" "-rf" dest)
+        (sh "mkdir" "-p" dest)
+        (doseq [dep local-deps
+                ext [".clj" ".cljs" ".cljc" "/"]
+                :let [dep (replace (name dep) "-" "_")
+                      target (str "src/" group "/" dep ext)]
+                :when (fexists? target)]
+          (sh "ln" "-sr" target dest))
+        (sppit (path "target" lib "deps.edn") deps-edn)
+        (sppit (path "target" lib "lib.edn") lib-edn)))))
+
+(defn lib-config []
+  (let [{:keys [group artifact version]} (c/read-string (sh "cat" "lib.edn"))]
+    [group artifact version]))
+
+(defn jar []
+  (let [[group artifact version] (lib-config)]
+    (sh "clj" "-Sdeps" "{:deps {luchiniatwork/cambada {:mvn/version \"1.0.0\"}}}"
+        "-m" "cambada.jar"
+        "--app-group-id" group
+        "--app-artifact-id" artifact
+        "--app-version" version)))
+
+(defn with-lib [command]
+  (let [[group artifact version] (lib-config)
+        file (str "target/" artifact "-" version ".jar")]
+    (assert (contains? #{"install" "deploy"} command))
+    (sh "clj" "-Sdeps" "{:deps {deps-deploy {:mvn/version \"RELEASE\"}}}"
+        "-m" "deps-deploy.deps-deploy" command file)))
+
+(defn mono-push [config]
+  (doseq [lib (-> config :artifacts keys)]
+    (with-sh-dir (str "target/" lib)
+      (println "packaging" lib)
+      (print (jar))
+      (println "deploying" lib)
+      (println (with-lib "deploy"))
+      (println))))
+
+(let [[command & args] *command-line-args*
+      f (case command
+          "reset" mono-reset
+          "push" mono-push)
+      config (c/read-string (c/slurp "mono.edn"))]
+  (apply f config args))

@@ -1,0 +1,73 @@
+{:version "1.1"
+ :group "jobryant"
+ :artifacts
+ {util          {:deps [org.clojure/clojure
+                        orchestra
+                        potemkin
+                        mount
+                        ring/ring-defaults
+                        ring-cors
+                        ring-middleware-format
+                        com.taoensso/timbre
+                        com.taoensso/encore]}
+  firebase      {:deps [com.google.firebase/firebase-admin]}
+  views         {:local-deps [util]
+                 :deps [org.clojure/clojure
+                        hiccup
+                        re-com
+                        garden]}
+  ion           {:local-deps [util]
+                 :deps [org.clojure/clojure
+                        com.datomic/ion
+                        com.taoensso/timbre]}
+  datascript    {:local-deps [util]
+                 :deps [datascript
+                        reagent
+                        com.andrewmcveigh/cljs-time]}
+  datomic       {:local-deps [util]
+                 :deps [org.clojure/clojure
+                        com.datomic/datomic-free
+                        me.raynes/fs]}
+  datomic-cloud {:local-deps [util]
+                 :deps [org.clojure/clojure
+                        com.datomic/client-cloud
+                        com.taoensso/timbre
+                        orchestra]}
+  trident       {:local-deps [util datomic-cloud firebase ion]
+                 :deps [com.datomic/client-cloud
+                        mount
+                        com.datomic/ion
+                        org.clojure/clojure
+                        orchestra
+                        compojure]}
+  trident-front {:local-deps [util datascript views]}
+  trident-dev   {:local-deps [trident]
+                 :deps [org.immutant/web
+                        nrepl
+                        org.clojure/tools.namespace]}}
+ :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
+ :managed-deps
+ {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
+  com.datomic/client-cloud {:mvn/version "0.8.71"}
+  com.datomic/datomic-free {:mvn/version "0.9.5697"}
+  com.datomic/ion {:mvn/version "0.9.28"}
+  com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
+  com.taoensso/encore {:mvn/version "2.112.0"}
+  com.taoensso/timbre {:mvn/version "4.10.0"}
+  compojure {:mvn/version "1.6.1"}
+  datascript {:mvn/version "0.18.2"}
+  garden {:mvn/version "1.3.9"}
+  hiccup {:mvn/version "1.0.5"}
+  me.raynes/fs {:mvn/version "1.4.6"}
+  mount {:mvn/version "0.1.15"}
+  nrepl {:mvn/version "0.6.0"}
+  orchestra {:mvn/version "2019.02.06-1"}
+  org.clojure/clojure {:mvn/version "1.9.0"}
+  org.clojure/tools.namespace {:mvn/version "0.2.11"}
+  org.immutant/web {:mvn/version "2.1.10"}
+  potemkin {:mvn/version "0.4.5"}
+  re-com {:mvn/version "2.5.0"}
+  reagent {:mvn/version "0.8.1"}
+  ring-cors {:mvn/version "0.1.13"}
+  ring-middleware-format {:mvn/version "0.7.4"}
+  ring/ring-defaults {:mvn/version "0.3.2"}}}

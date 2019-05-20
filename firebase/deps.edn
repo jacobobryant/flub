@@ -1,2 +1,0 @@
-{:paths ["src"]
- :deps {com.google.firebase/firebase-admin {:mvn/version "6.8.1"}}}
