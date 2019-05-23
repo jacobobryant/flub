@@ -122,7 +122,7 @@ Distributed under the [EPL v2.0]
 
 Copyright &copy; 2019 [Jacob O'Bryant].
 
-[EPL v2.0]: https:/github.com/jobryant/trident/blob/master/LICENSE
+[EPL v2.0]: https://github.com/jacobobryant/trident/blob/master/LICENSE
 [Jacob O'Bryant]: https://jacobobryant.com
 [FlexBudget]: https://notjust.us
 [here]: http://lucumr.pocoo.org/2013/2/13/moar-classes/
