@@ -1,5 +1,5 @@
 ```clojure
-[trident "0.0.1"]
+[trident "0.1.0"]
 ```
 
 # Trident
