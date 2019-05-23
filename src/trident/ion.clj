@@ -1,5 +1,5 @@
-(ns jobryant.ion
-  (:require [jobryant.util :as u]
+(ns trident.ion
+  (:require [trident.util :as u]
             [datomic.ion.cast :as cast]
             [taoensso.timbre :as timbre]
             [datomic.ion :as ion]

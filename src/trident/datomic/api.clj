@@ -1,7 +1,7 @@
-(ns jobryant.datomic.api
+(ns trident.datomic.api
   (:refer-clojure :exclude [sync filter])
-  (:require [jobryant.util :as u]
-            [jobryant.datomic.util :as du]
+  (:require [trident.util :as u]
+            [trident.datomic.util :as du]
             [datomic.api :as d]
             [clojure.java.io :refer [reader writer]]
             [me.raynes.fs :as fs]
@@ -62,7 +62,7 @@
   (d/delete-database db-uri)
   (d/create-database db-uri)
   (let [conn (d/connect db-uri)
-        tmp-storage (fs/temp-file "jobryant-datomic-api")
+        tmp-storage (fs/temp-file "trident-datomic-api")
         txes (remove empty? [schema
                              (some-> tx-fn-ns du/ns-tx-fns)
                              data])]

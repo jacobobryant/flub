@@ -1,12 +1,12 @@
-(ns jobryant.datascript.core
+(ns trident.datascript.core
   (:require [reagent.core :as r]
             [datascript.core :as d]
-            [jobryant.util :as u]
+            [trident.util :as u]
             [cljs-time.instant]
             [cljs-time.coerce :refer [from-date]]
             [clojure.walk :refer [postwalk]]
             [cljs.core.async :refer [<!]])
-  (:require-macros [jobryant.util :as u]
+  (:require-macros [trident.util :as u]
                    [cljs.core.async.macros :refer [go]]))
 
 (u/cljs-pullall datascript.core

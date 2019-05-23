@@ -1,4 +1,4 @@
-(ns jobryant.views.hiccup
+(ns trident.views.hiccup
   (:require [garden.core :as garden]
             [hiccup.core :as hiccup]
             [clojure.walk :refer [postwalk]]))

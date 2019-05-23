@@ -1,4 +1,4 @@
-(ns jobryant.util.ring
+(ns trident.util.ring
   (:require [taoensso.timbre :refer [error debug]]
             [mount.core :as mount]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]

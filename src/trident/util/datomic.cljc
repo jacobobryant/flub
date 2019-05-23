@@ -1,7 +1,7 @@
-(ns jobryant.util.datomic
+(ns trident.util.datomic
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [jobryant.util.core :as u]
+            [trident.util.core :as u]
             [orchestra.core :refer [defn-spec]]
             [clojure.set :refer [difference]]))
 

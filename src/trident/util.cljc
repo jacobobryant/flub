@@ -1,16 +1,16 @@
-(ns jobryant.util
-  (:require [jobryant.util.core :as u]
-            [jobryant.util.datomic]
-  #?@(:clj [[potemkin :refer [import-vars]]
-            [jobryant.util.ring]]))
-  #?(:cljs (:require-macros [jobryant.util])))
+(ns trident.util
+  (:require [trident.util.core :as u]
+            [trident.util.datomic]
+  #?@(:clj [[trident.util.potemkin :refer [import-vars]]
+            [trident.util.ring]]))
+  #?(:cljs (:require-macros [trident.util])))
 
-#?(:clj (u/pullall jobryant.util.core jobryant.util.datomic jobryant.util.ring))
+#?(:clj (u/pullall trident.util.core trident.util.datomic trident.util.ring))
 
 #?(:cljs (do
 
 ; see if we can restrict this to fns that are only defined for cljs
-(u/cljs-pullall jobryant.util.datomic
+(u/cljs-pullall trident.util.datomic
                 datascript-schema
                 datomic-schema
                 ent-spec
@@ -19,7 +19,7 @@
                 translate-eids
                 wrap-vec)
 
-(u/cljs-pullall jobryant.util.core
+(u/cljs-pullall trident.util.core
                 assoc-some
                 c+
                 c-

@@ -1,15 +1,14 @@
-(ns jobryant.trident
-  (:require [jobryant.util :as u]
-            [jobryant.datomic-cloud.txauth :as txauth]
-            [jobryant.datomic-cloud.client :refer [connect]]
-            [jobryant.firebase :refer [verify-token]]
-            [jobryant.ion :as jion]
+(ns trident.web
+  (:require [trident.util :as u]
+            [trident.datomic-cloud.txauth :as txauth]
+            [trident.datomic-cloud.client :refer [connect]]
+            [trident.firebase :refer [verify-token]]
+            [trident.ion :as jion]
             [datomic.ion :as ion]
             [datomic.client.api :as d]
             [clojure.spec.alpha :as s]
             [mount.core :refer [defstate start]]
             [orchestra.core :refer [defn-spec]]
-            [compojure.core :refer [defroutes GET POST]]
             [datomic.ion.lambda.api-gateway :refer [ionize]]))
 
 (s/def ::config (fn [x] (every? #(contains? x %) [:env :app-name])))

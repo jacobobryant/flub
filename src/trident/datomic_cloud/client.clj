@@ -1,5 +1,5 @@
-(ns jobryant.datomic-cloud.client
-  (:require [jobryant.util :as u]
+(ns trident.datomic-cloud.client
+  (:require [trident.util :as u]
             [datomic.client.api :as d]
             [datomic.client.api.protocols :as client-proto]
             [datomic.client.api.impl :as client-impl]))

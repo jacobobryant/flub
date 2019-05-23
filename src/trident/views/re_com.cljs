@@ -1,9 +1,9 @@
-(ns jobryant.views.re-com
+(ns trident.views.re-com
   (:refer-clojure :exclude [case])
   (:require [re-com.core :as rc]
             [clojure.pprint :refer [pprint]])
-  (:require-macros [jobryant.util :as u]
-                   [jobryant.views.re-com]))
+  (:require-macros [trident.util :as u]
+                   [trident.views.re-com]))
 
 (u/cljs-pullall re-com.core
                 align-style horizontal-pill-tabs row-button popover-border border

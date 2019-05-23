@@ -1,5 +1,5 @@
 ```clojure
-[jobryant/trident "1.1"]
+[trident "0.0.1"]
 ```
 
 # Trident
@@ -49,7 +49,7 @@ I wouldn't necessarily recommend actually using this code since it's at a very
 early stage, but I'd love to hear about it if you try. If you're interested in
 developing applications on top of Datomic, you might enjoy at least reading some
 of the code. There isn't any documentation yet (I'm working on that now), but
-`jobryant.trident/init!` is a good starting point. There is also [a small
+`trident.web/init!` is a good starting point. There is also [a small
 website] which I have written with Trident.
 
 [This article] describes several features which I have since moved into Trident,
@@ -64,11 +64,10 @@ including:
 In addition, I've organized Trident in a way that makes it highly modular
 without sacrificing convenience. All the code is stored in a single `src`
 folder, and individual projects (along with their dependencies) are defined in
-the `mono.edn` file. `bin/trident` is used to take slices of the codebase and
-package them into jars, along with a couple other tasks. If you'd like to use a
-similar setup for your own codebase, just copy the `bin` folder (you'll also
-need to install [planck]).
+the `trident.edn` file. `jobryant.build` is used to take slices of the codebase and
+package them into jars, along with a couple other tasks.
 
+<!-- todo update, preferably automatically 
 The available artifacts (all with the same version) include:
 
  - `jobryant/util`
@@ -86,10 +85,12 @@ The code of each artifact consists of:
 
 1. `src/jobryant/<name>*`, e.g. `jobryant/util` includes
    `src/jobryant/util.cljc` and `src/jobryant/util/`.
-2. The code from any artifacts listed under `:local-deps` in `mono.edn`. For
+2. The code from any artifacts listed under `:local-deps` in `trident.edn`. For
    example, the line `trident {:local-deps [util datomic-cloud firebase ion]`
    means that `jobryant/trident` also includes `jobryant/util`,
    `jobryant/datomic-cloud`, etc.
+
+-->
 
 ## Progress
 

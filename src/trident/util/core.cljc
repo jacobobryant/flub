@@ -1,4 +1,4 @@
-(ns jobryant.util.core
+(ns trident.util.core
   (:require [clojure.walk :refer [postwalk]]
             [clojure.pprint]
             [clojure.spec.alpha :as s]
@@ -8,7 +8,7 @@
             [cljs.core.async :refer [<! put! chan close!]]]
       :clj [[potemkin :refer [import-vars]]
             [clojure.reflect :refer [reflect]]]))
-  #?(:cljs (:require-macros jobryant.util.core)))
+  #?(:cljs (:require-macros trident.util.core)))
 
 (def pprint clojure.pprint/pprint)
 

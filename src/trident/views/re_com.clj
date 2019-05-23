@@ -1,6 +1,6 @@
-(ns jobryant.views.re-com
+(ns trident.views.re-com
   (:refer-clojure :exclude [for])
-  (:require [jobryant.views :refer [defview]]))
+  (:require [trident.views :refer [defview]]))
 
 (defmacro for [bindings body]
   `(clojure.core/for ~bindings

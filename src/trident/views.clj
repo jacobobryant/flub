@@ -1,4 +1,4 @@
-(ns jobryant.views)
+(ns trident.views)
 
 (defn get-opts [opts contents]
   (if (map? opts)

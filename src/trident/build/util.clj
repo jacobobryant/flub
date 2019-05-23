@@ -1,6 +1,5 @@
-(ns util.core
-  (:require [planck.shell :as shell]
-            [planck.core :refer [spit]]
+(ns trident.build.util
+  (:require [clojure.java.shell :as shell]
             [clojure.pprint :refer [pprint]]
             [clojure.string :refer [split join]]))
 
@@ -18,9 +17,6 @@
     (if (= 0 (:exit result))
       (:out result)
       (throw (ex-info (:err result) {})))))
-
-(defn shsplit [cmd]
-  (apply sh (split cmd #" ")))
 
 (defn sppit [file x]
   (spit file (with-out-str (pprint x))))

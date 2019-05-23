@@ -1,4 +1,4 @@
-(ns jobryant.firebase
+(ns trident.firebase
   (:require [clojure.java.io :refer [input-stream]])
   (:import com.google.firebase.auth.FirebaseAuth
            [com.google.firebase FirebaseApp FirebaseOptions$Builder]

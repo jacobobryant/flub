@@ -1,8 +1,8 @@
-(ns jobryant.datomic.util
+(ns trident.datomic.util
   (:require [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
             [clojure.spec.alpha :as s]
-            [jobryant.util :as u]
+            [trident.util :as u]
             [datomic.api :as d]))
 
 (defn exists?

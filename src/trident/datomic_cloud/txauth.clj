@@ -1,9 +1,9 @@
-(ns jobryant.datomic-cloud.txauth
+(ns trident.datomic-cloud.txauth
   (:require [clojure.spec.alpha :as s]
             [datomic.client.api :as d]
             [orchestra.core :refer [defn-spec]]
             [taoensso.timbre :refer [debug]]
-            [jobryant.util :as u]))
+            [trident.util :as u]))
 
 (defn exists?
   ([db eid]

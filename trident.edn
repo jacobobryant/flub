@@ -1,7 +1,22 @@
-{:version "1.1"
- :group "jobryant"
+{:version "0.1.0-SNAPSHOT"
+ :group "trident"
+ :github-repo "jacobobryant/trident"
+ :cljdoc-dir "/home/arch/dev/cljdoc/"
+ :aliases {:dev {:extra-deps {trident/repl {:mvn/version "RELEASE"}}}}
  :artifacts
- {util          {:deps [org.clojure/clojure
+ {build         {:deps [org.clojure/data.xml
+                        org.clojure/data.zip
+                        me.raynes/fs
+                        jobryant/pack
+                        deps-deploy
+                        org.clojure/tools.deps.alpha]}
+  repl          {:deps [org.clojure/tools.namespace
+                        mount
+                        orchestra
+                        nrepl]}
+  util          {:deps [org.clojure/clojure
+                        org.clojure/data.xml
+                        org.clojure/data.zip
                         orchestra
                         potemkin
                         mount
@@ -9,7 +24,8 @@
                         ring-cors
                         ring-middleware-format
                         com.taoensso/timbre
-                        com.taoensso/encore]}
+                        com.taoensso/encore
+                        org.clojure/tools.deps.alpha]}
   firebase      {:deps [com.google.firebase/firebase-admin]}
   views         {:local-deps [util]
                  :deps [org.clojure/clojure
@@ -33,18 +49,18 @@
                         com.datomic/client-cloud
                         com.taoensso/timbre
                         orchestra]}
-  trident       {:local-deps [util datomic-cloud firebase ion]
+  web           {:local-deps [util datomic-cloud firebase ion]
                  :deps [com.datomic/client-cloud
                         mount
                         com.datomic/ion
                         org.clojure/clojure
-                        orchestra
-                        compojure]}
-  trident-front {:local-deps [util datascript views]}
-  trident-dev   {:local-deps [trident]
+                        orchestra]}
+  frontend      {:local-deps [util datascript views]}
+  web-repl      {:local-deps [web]
                  :deps [org.immutant/web
                         nrepl
-                        org.clojure/tools.namespace]}}
+                        org.clojure/tools.namespace]}
+  trident       {:local-deps [datomic frontend web-repl repl]}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
  :managed-deps
  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
@@ -54,7 +70,6 @@
   com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
   com.taoensso/encore {:mvn/version "2.112.0"}
   com.taoensso/timbre {:mvn/version "4.10.0"}
-  compojure {:mvn/version "1.6.1"}
   datascript {:mvn/version "0.18.2"}
   garden {:mvn/version "1.3.9"}
   hiccup {:mvn/version "1.0.5"}
@@ -63,8 +78,13 @@
   nrepl {:mvn/version "0.6.0"}
   orchestra {:mvn/version "2019.02.06-1"}
   org.clojure/clojure {:mvn/version "1.9.0"}
+  org.clojure/data.xml {:mvn/version "0.2.0-alpha5"}
+  org.clojure/data.zip {:mvn/version "0.1.3"}
+  org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}
   org.clojure/tools.namespace {:mvn/version "0.2.11"}
   org.immutant/web {:mvn/version "2.1.10"}
+  jobryant/pack {:mvn/version "1.0"}
+  deps-deploy {:mvn/version "RELEASE"}
   potemkin {:mvn/version "0.4.5"}
   re-com {:mvn/version "2.5.0"}
   reagent {:mvn/version "0.8.1"}
