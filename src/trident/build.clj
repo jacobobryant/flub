@@ -30,8 +30,8 @@
 (def ^:private build-contents
 "#!/bin/bash
 for f in ../../shared.sh project-build.sh; do
-  if [ -f ../../shared.sh ]; then
-    source ../../shared.sh
+  if [ -f $f ]; then
+    source $f
   fi
 done
 set -e
