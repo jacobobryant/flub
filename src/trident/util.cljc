@@ -1,7 +1,7 @@
 (ns trident.util
   (:require [trident.util.core :as u]
             [trident.util.datomic]
-  #?@(:clj [[trident.util.potemkin :refer [import-vars]]
+  #?@(:clj [[potemkin :refer [import-vars]]
             [trident.util.ring]]))
   #?(:cljs (:require-macros [trident.util])))
 

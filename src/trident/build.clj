@@ -4,8 +4,7 @@
             [trident.build.pom :as pom]
             [clojure.set :refer [union difference]]
             [clojure.string :as str]
-            [mach.pack.alpha.skinny :as skinny]
-            [deps-deploy.deps-deploy :as deps-deploy]))
+            [mach.pack.alpha.skinny :as skinny]))
 
 (def ^:private config (memoize #(read-string (slurp "trident.edn"))))
 
@@ -111,11 +110,11 @@ set -x
       (print (sh "bash" "-c" status-cmd))
       (sh "sleep" "5"))))
 
-;(defn doc [lib]
-;  (let [git-dir (path (sh "pwd") "target" lib)]
-;    (with-sh-dir (:cljdoc-dir (config))
-;      (print (sh "./script/cljdoc" "ingest" "-p" (str (:group (config)) "/" lib)
-;                 "-v" (:version (config)) "--git" git-dir)))))
+(defn doc [lib]
+  (let [git-dir (cwd)]
+    (with-sh-dir (:cljdoc-dir (config))
+      (print (sh "./script/cljdoc" "ingest" "-p" (str (:group (config)) "/" lib)
+                 "-v" (:version (config)) "--git" git-dir)))))
 
 (defn forall [f & libs]
   (doseq [lib (get-libs libs)]

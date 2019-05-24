@@ -13,7 +13,7 @@
   (let [result (apply shell/sh args)]
     (if (= 0 (:exit result))
       (:out result)
-      (throw (ex-info (:err result) {})))))
+      (throw (ex-info (:err result) result)))))
 
 (defn cwd []
   (trim (sh "pwd")))
