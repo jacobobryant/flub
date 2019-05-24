@@ -42,7 +42,7 @@ set -x
 (defn reset [& libs]
   (doseq [lib (get-libs libs)]
     (let [{:keys [group managed-deps]} (config)]
-      (let [dest (path "projects" lib "src" group)
+      (let [dest (path "target" lib "src" group)
             [local-deps maven-deps] (get-deps lib)
             deps-edn (merge {:paths ["src"]
                              :deps (select-keys managed-deps maven-deps)}
@@ -57,10 +57,10 @@ set -x
                       target (str "src/" group "/" dep ext)]
                 :when (fexists? target)]
           (sh "ln" "-sr" target dest))
-        (sppit (path "projects" lib "deps.edn") deps-edn)
-        (sppit (path "projects" lib "lib.edn") lib-edn)
-        (spit (path "projects" lib "build") build-contents)
-        (sh "chmod" "+x" (path "projects" lib "build"))))))
+        (sppit (path "target" lib "deps.edn") deps-edn)
+        (sppit (path "target" lib "lib.edn") lib-edn)
+        (spit (path "target" lib "build") build-contents)
+        (sh "chmod" "+x" (path "target" lib "build"))))))
 
 (let [cache (memoize (fn [_] (read-string (sh "cat" "lib.edn"))))]
   (defn- lib-config []
@@ -68,7 +68,7 @@ set -x
 
 (defn- jar-file []
   (let [{:keys [artifact version]} (lib-config)]
-    (str "projects/" artifact "-" version ".jar")))
+    (str (sh "pwd") "/target/" artifact "-" version ".jar")))
 
 (defn pom []
   (pom/-main (sh "cat" "lib.edn")))
@@ -103,14 +103,14 @@ set -x
       (sh "sleep" "5"))))
 
 ;(defn doc [lib]
-;  (let [git-dir (path (sh "pwd") "projects" lib)]
+;  (let [git-dir (path (sh "pwd") "target" lib)]
 ;    (with-sh-dir (:cljdoc-dir (config))
 ;      (print (sh "./script/cljdoc" "ingest" "-p" (str (:group (config)) "/" lib)
 ;                 "-v" (:version (config)) "--git" git-dir)))))
 
 (defn forall [f & libs]
   (doseq [lib (get-libs libs)]
-    (with-sh-dir (str "projects/" lib)
+    (with-sh-dir (str "target/" lib)
       (dispatch f))))
 
 (defn- dispatch [f & args]
