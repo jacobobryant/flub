@@ -1,6 +1,6 @@
 (ns trident.build
   (:require [clojure.java.shell :as shell :refer [with-sh-dir]]
-            [trident.build.util :refer [sh path fexists? sppit]]
+            [trident.build.util :refer [sh path cwd fexists? sppit]]
             [trident.build.pom :as pom]
             [clojure.set :refer [union difference]]
             [clojure.string :as str]
@@ -48,27 +48,28 @@ set -x
                              :deps (select-keys managed-deps maven-deps)}
                             (select-keys (config) [:mvn/repos :aliases]))
             lib-edn (merge (select-keys (config) [:version :group :github-repo])
-                           {:artifact (str lib)})]
+                           {:artifact (str lib)})
+            lib-path (partial path "target" lib)]
         (sh "rm" "-rf" dest)
         (sh "mkdir" "-p" dest)
         (doseq [dep local-deps
                 ext [".clj" ".cljs" ".cljc" "/"]
                 :let [dep (str/replace (name dep) "-" "_")
-                      target (str "src/" group "/" dep ext)]
+                      target (path "src" group (str dep ext))]
                 :when (fexists? target)]
           (sh "ln" "-sr" target dest))
-        (sppit (path "target" lib "deps.edn") deps-edn)
-        (sppit (path "target" lib "lib.edn") lib-edn)
-        (spit (path "target" lib "build") build-contents)
-        (sh "chmod" "+x" (path "target" lib "build"))))))
+        (sppit (lib-path "deps.edn") deps-edn)
+        (sppit (lib-path "lib.edn") lib-edn)
+        (spit (lib-path "build") build-contents)
+        (sh "chmod" "+x" (lib-path "build"))))))
 
 (let [cache (memoize (fn [_] (read-string (sh "cat" "lib.edn"))))]
   (defn- lib-config []
-    (cache (sh "pwd"))))
+    (cache (cwd))))
 
 (defn- jar-file []
   (let [{:keys [artifact version]} (lib-config)]
-    (str (sh "pwd") "/target/" artifact "-" version ".jar")))
+    (path "target" (str artifact "-" version ".jar"))))
 
 (defn pom []
   (pom/-main (sh "cat" "lib.edn")))
@@ -85,7 +86,15 @@ set -x
     (println "generating pom")
     (pom)
     (println (str command "ing")))
-  (deps-deploy/-main command (jar-file)))
+  ; We have to shell out because pom.xml isn't in the JVM's working directory.
+  ; Even after modifying the deps-deploy source to accept an argument for the
+  ; pom.xml path, I can't get pomegranete's :pom-file arg to work. It'd be
+  ; reaallly nice if we didn't have to spin up another JVM every time we do
+  ; this. Thank you to the JVM designers for not allowing us to just change the
+  ; directory.
+  ; todo, try to change the directory with https://stackoverflow.com/a/8204584/1258629
+  (print (sh "clj" "-Sdeps" (pr-str '{:deps {deps-deploy {:mvn/version "0.0.9"}}})
+             "-m" "deps-deploy.deps-deploy" command (jar-file))))
 (def install (partial lib-task "install"))
 (def deploy (partial lib-task "deploy"))
 
@@ -110,7 +119,7 @@ set -x
 
 (defn forall [f & libs]
   (doseq [lib (get-libs libs)]
-    (with-sh-dir (str "target/" lib)
+    (with-sh-dir (path "target" lib)
       (dispatch f))))
 
 (defn- dispatch [f & args]

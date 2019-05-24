@@ -8,7 +8,6 @@
                         org.clojure/data.zip
                         me.raynes/fs
                         jobryant/pack
-                        deps-deploy
                         org.clojure/tools.deps.alpha]}
   repl          {:deps [org.clojure/tools.namespace
                         mount
@@ -84,7 +83,6 @@
   org.clojure/tools.namespace {:mvn/version "0.2.11"}
   org.immutant/web {:mvn/version "2.1.10"}
   jobryant/pack {:mvn/version "1.0"}
-  deps-deploy {:mvn/version "RELEASE"}
   potemkin {:mvn/version "0.4.5"}
   re-com {:mvn/version "2.5.0"}
   reagent {:mvn/version "0.8.1"}
