@@ -6,8 +6,11 @@
  :artifacts
  {build         {:deps [org.clojure/data.xml
                         org.clojure/data.zip
+                        deps-deploy
                         me.raynes/fs
                         jobryant/pack
+                        com.github.jnr/jnr-posix
+                        com.sun.jna/jna
                         org.clojure/tools.deps.alpha]}
   repl          {:deps [org.clojure/tools.namespace
                         mount
@@ -16,6 +19,7 @@
   util          {:deps [org.clojure/clojure
                         org.clojure/data.xml
                         org.clojure/data.zip
+                        org.clojure/core.async
                         orchestra
                         potemkin
                         mount
@@ -66,23 +70,27 @@
   com.datomic/client-cloud {:mvn/version "0.8.71"}
   com.datomic/datomic-free {:mvn/version "0.9.5697"}
   com.datomic/ion {:mvn/version "0.9.28"}
+  com.github.jnr/jnr-posix {:mvn/version "3.0.49"}
   com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
+  com.sun.jna/jna {:mvn/version "3.0.9"}
   com.taoensso/encore {:mvn/version "2.112.0"}
   com.taoensso/timbre {:mvn/version "4.10.0"}
   datascript {:mvn/version "0.18.2"}
+  deps-deploy {:mvn/version "0.0.9"}
   garden {:mvn/version "1.3.9"}
   hiccup {:mvn/version "1.0.5"}
+  jobryant/pack {:mvn/version "1.0"}
   me.raynes/fs {:mvn/version "1.4.6"}
   mount {:mvn/version "0.1.15"}
   nrepl {:mvn/version "0.6.0"}
   orchestra {:mvn/version "2019.02.06-1"}
   org.clojure/clojure {:mvn/version "1.9.0"}
+  org.clojure/core.async {:mvn/version "0.4.490"}
   org.clojure/data.xml {:mvn/version "0.2.0-alpha5"}
   org.clojure/data.zip {:mvn/version "0.1.3"}
   org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}
   org.clojure/tools.namespace {:mvn/version "0.2.11"}
   org.immutant/web {:mvn/version "2.1.10"}
-  jobryant/pack {:mvn/version "1.0"}
   potemkin {:mvn/version "0.4.5"}
   re-com {:mvn/version "2.5.0"}
   reagent {:mvn/version "0.8.1"}

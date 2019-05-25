@@ -1,10 +1,11 @@
 (ns trident.build
   (:require [clojure.java.shell :as shell :refer [with-sh-dir]]
-            [trident.build.util :refer [sh path cwd fexists? sppit]]
+            [trident.build.util :refer [sh path cwd fexists? sppit with-cwd]]
             [trident.build.pom :as pom]
             [clojure.set :refer [union difference]]
             [clojure.string :as str]
-            [mach.pack.alpha.skinny :as skinny]))
+            [mach.pack.alpha.skinny :as skinny]
+            [deps-deploy.deps-deploy :as deps-deploy]))
 
 (def ^:private config (memoize #(read-string (slurp "trident.edn"))))
 
@@ -26,6 +27,7 @@
         maven-deps (set (mapcat #(get-in (config) [:artifacts % :deps]) local-deps))]
     [local-deps maven-deps]))
 
+; todo move to a resources dir or something
 (def ^:private build-contents
 "#!/bin/bash
 for f in ../../shared.sh project-build.sh; do
@@ -75,25 +77,21 @@ set -x
 
 (defn jar []
   (sh "rm" "-f" (jar-file))
-  (skinny/-main "--no-libs" "--project-path" (jar-file)))
+  (sh "mkdir" "-p" "target/extra/META-INF/")
+  (sh "cp" "pom.xml" "target/extra/META-INF")
+  (with-cwd
+    (skinny/-main "--no-libs" "-e" "target/extra" "--project-path" (jar-file))))
 
 (defn- lib-task [command & [fast?]]
   (assert (contains? #{"install" "deploy"} command))
   (when (not= fast? "fast")
-    (println "packaging")
-    (jar)
     (println "generating pom")
     (pom)
+    (println "packaging")
+    (jar)
     (println (str command "ing")))
-  ; We have to shell out because pom.xml isn't in the JVM's working directory.
-  ; Even after modifying the deps-deploy source to accept an argument for the
-  ; pom.xml path, I can't get pomegranete's :pom-file arg to work. It'd be
-  ; reaallly nice if we didn't have to spin up another JVM every time we do
-  ; this. Thank you to the JVM designers for not allowing us to just change the
-  ; directory.
-  ; todo, try to change the directory with https://stackoverflow.com/a/8204584/1258629
-  (print (sh "clj" "-Sdeps" (pr-str '{:deps {deps-deploy {:mvn/version "0.0.9"}}})
-             "-m" "deps-deploy.deps-deploy" command (jar-file))))
+  (with-cwd
+    (deps-deploy/-main command (jar-file))))
 (def install (partial lib-task "install"))
 (def deploy (partial lib-task "deploy"))
 
