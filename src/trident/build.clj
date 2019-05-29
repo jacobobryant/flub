@@ -94,11 +94,13 @@ set -x
 ;      (print (sh "bash" "-c" status-cmd))
 ;      (sh "sleep" "5"))))
 
-(defn cljdoc [{:keys [group-id artifact-id version cljdoc-dir git-dir]}]
-  (let [git-dir (abspath git-dir)]
+(defn cljdoc [{:keys [group-id artifact-id version cljdoc-dir git-dir remote-repo]}]
+  (let [git-dir (abspath git-dir)
+        args (cond-> ["./script/cljdoc" "ingest" "-p" (str group-id "/" artifact-id)
+                      "-v" version]
+               (not remote-repo) (concat ["--git" git-dir]))]
     (with-dir cljdoc-dir
-      (print (sh "./script/cljdoc" "ingest" "-p" (str group-id "/" artifact-id)
-                 "-v" version "--git" git-dir)))))
+      (print (apply sh args)))))
 
 (declare commands)
 
@@ -138,7 +140,8 @@ set -x
            ["-v" "--version VERSION" "Version"]
            ["-c" "--cljdoc-dir DIR" "cljdoc directory"]
            ["-d" "--git-dir DIR" "Directory of git repository"
-            :default "."]]}
+            :default "."]
+           ["-r" "--remote-repo" "Use remote repo instead of the local one"]]}
    "reset" {:fn reset
             :defaults ["trident.edn"]}
    "pom" {:fn pom/sync-pom
