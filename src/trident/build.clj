@@ -38,9 +38,12 @@ set -x
   (doseq [lib (or (not-empty (map symbol libs)) (keys projects))]
     (let [dest (abspath "target" lib "src" group-id)
           [local-deps maven-deps] (get-deps projects lib)
-          deps-edn (merge {:paths ["src"]
-                           :deps (select-keys managed-deps maven-deps)}
-                          (select-keys opts [:mvn/repos :aliases]))
+          deps-edn (-> {:paths ["src"]
+                        :deps (select-keys managed-deps maven-deps)}
+                       (merge (select-keys opts [:mvn/repos :aliases]))
+                       (update :mvn/repos assoc
+                               "clojars" {:url "https://repo.clojars.org/"}
+                               "maven" {:url "https://repo1.maven.org/maven2"}))
           lib-edn (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
                          {:artifact-id (str lib)
                           :git-dir (abspath ".")})]
