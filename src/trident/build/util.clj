@@ -1,7 +1,8 @@
 (ns trident.build.util
   (:require [clojure.java.shell :as shell]
             [clojure.pprint :refer [pprint]]
-            [clojure.string :refer [split join starts-with? trim]])
+            [clojure.string :refer [split join starts-with? trim]]
+            [me.raynes.fs :as raynes :refer [absolute]])
   (:import (jnr.posix POSIXFactory)))
 
 (defn fexists? [path]
@@ -16,30 +17,37 @@
       (:out result)
       (throw (ex-info (:err result) result)))))
 
-(defn cwd []
-  (trim (sh "pwd")))
-
-(defn path [& xs]
-  (join "/"
-        (if (starts-with? (first xs) "/")
-          xs
-          (conj xs (cwd)))))
+(defn abspath [& xs]
+  (.getPath (absolute (join "/" xs))))
 
 (defn sppit [file x]
   (spit file (with-out-str (pprint x))))
 
+(defn maybe-slurp [f]
+  (try
+    (slurp f)
+    (catch Exception e nil)))
+
 (let [posix (delay (POSIXFactory/getNativePOSIX))]
   (defn chdir [dir]
-    (let [dir (path dir)]
+    (let [dir (abspath dir)]
       (.chdir @posix dir)
       (System/setProperty "user.dir" dir))))
 
-(defn with-cwd* [f]
-  (let [java-cwd (System/getProperty "user.dir")
-        _ (chdir (cwd))
-        result (f)]
-    (chdir java-cwd)
-    result))
+(defn with-dir* [new-dir f]
+  (let [new-dir (abspath new-dir)
+        old-dir (System/getProperty "user.dir")
+        _ (chdir new-dir)
+        result (shell/with-sh-dir new-dir
+                 (raynes/with-cwd new-dir
+                   (try
+                     {:success (f)}
+                     (catch Exception e
+                       {:fail e}))))]
+    (chdir old-dir)
+    (if (contains? result :success)
+      (:success result)
+      (throw (:fail result)))))
 
-(defmacro with-cwd [& forms]
-  `(with-cwd* #(do ~@forms)))
+(defmacro with-dir [dir & forms]
+  `(with-dir* ~dir #(do ~@forms)))

@@ -1,6 +1,6 @@
 (ns trident.build.pom
   (:require [trident.build.xml :refer [xml-replace]]
-            [trident.build.util :refer [sh path cwd]]
+            [trident.build.util :refer [abspath]]
             [clojure.data.xml :as xml]
             [clojure.tools.deps.alpha.gen.pom :as gen.pom]
             [clojure.java.io :as io]
@@ -9,16 +9,16 @@
 
 (xml/alias-uri 'pom "http://maven.apache.org/POM/4.0.0")
 
-(defn sync-pom [{:keys [group artifact version github-repo]}]
-  (let [pom-path (path "pom.xml")]
+(defn sync-pom [{:keys [group-id artifact-id version github-repo]}]
+  (let [pom-path (abspath "pom.xml")]
     (io/delete-file pom-path true)
     (gen.pom/sync-pom
-      (read-deps [(io/file (path "deps.edn"))])
-      (io/file (cwd)))
+      (read-deps [(io/file (abspath "deps.edn"))])
+      (io/file (abspath ".")))
     (-> pom-path io/file io/input-stream xml/parse
         (xml-replace
-          ::pom/groupId group
-          ::pom/artifactId artifact
+          ::pom/groupId group-id
+          ::pom/artifactId artifact-id
           ::pom/version version)
         zip/xml-zip
         (zip/insert-child
@@ -31,6 +31,3 @@
         zip/root
         xml/indent-str
         (->> (spit pom-path)))))
-
-(defn -main [opts]
-  (sync-pom (read-string opts)))

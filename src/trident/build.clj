@@ -1,30 +1,24 @@
 (ns trident.build
-  (:require [clojure.java.shell :as shell :refer [with-sh-dir]]
-            [trident.build.util :refer [sh path cwd fexists? sppit with-cwd]]
+  (:require [trident.build.util :refer [sh abspath fexists? sppit with-dir]]
+            [trident.build.cli :as cli]
             [trident.build.pom :as pom]
             [clojure.set :refer [union difference]]
+            [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
             [mach.pack.alpha.skinny :as skinny]
             [deps-deploy.deps-deploy :as deps-deploy]))
 
-(def ^:private config (memoize #(read-string (slurp "trident.edn"))))
-
-(declare dispatch)
-
-(defn- get-libs [libs]
-  (or (not-empty (map symbol libs)) (-> (config) :artifacts keys)))
-
-(defn- get-deps [lib]
+(defn- get-deps [projects lib]
   (let [local-deps (loop [deps #{}
                           libs #{lib}]
                      (if (empty? libs)
                        deps
-                       (let [local-deps (set (mapcat #(get-in (config) [:artifacts % :local-deps]) libs))
+                       (let [local-deps (set (mapcat #(get-in projects [% :local-deps]) libs))
                              deps (union deps libs)]
                          (recur
                            deps
                            (difference local-deps deps)))))
-        maven-deps (set (mapcat #(get-in (config) [:artifacts % :deps]) local-deps))]
+        maven-deps (set (mapcat #(get-in projects [% :deps]) local-deps))]
     [local-deps maven-deps]))
 
 ; todo move to a resources dir or something
@@ -40,88 +34,124 @@ set -x
 \"$@\"
 ")
 
-(defn reset [& libs]
-  (doseq [lib (get-libs libs)]
-    (let [{:keys [group managed-deps]} (config)]
-      (let [dest (path "target" lib "src" group)
-            [local-deps maven-deps] (get-deps lib)
-            deps-edn (merge {:paths ["src"]
-                             :deps (select-keys managed-deps maven-deps)}
-                            (select-keys (config) [:mvn/repos :aliases]))
-            lib-edn (merge (select-keys (config) [:version :group :github-repo])
-                           {:artifact (str lib)})
-            lib-path (partial path "target" lib)]
-        (sh "rm" "-rf" dest)
-        (sh "mkdir" "-p" dest)
-        (doseq [dep local-deps
-                ext [".clj" ".cljs" ".cljc" "/"]
-                :let [dep (str/replace (name dep) "-" "_")
-                      target (path "src" group (str dep ext))]
-                :when (fexists? target)]
-          (sh "ln" "-sr" target dest))
-        (sppit (lib-path "deps.edn") deps-edn)
-        (sppit (lib-path "lib.edn") lib-edn)
-        (spit (lib-path "build") build-contents)
-        (sh "chmod" "+x" (lib-path "build"))))))
+(defn reset [{:keys [projects group-id managed-deps] :as opts} & libs]
+  (doseq [lib (or (not-empty (map symbol libs)) (keys projects))]
+    (let [dest (abspath "target" lib "src" group-id)
+          [local-deps maven-deps] (get-deps projects lib)
+          deps-edn (merge {:paths ["src"]
+                           :deps (select-keys managed-deps maven-deps)}
+                          (select-keys opts [:mvn/repos :aliases]))
+          lib-edn (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
+                         {:artifact-id (str lib)
+                          :git-dir (abspath ".")})]
+      (sh "rm" "-rf" dest)
+      (sh "mkdir" "-p" dest)
+      (doseq [dep local-deps
+              ext [".clj" ".cljs" ".cljc" "/"]
+              :let [dep (str/replace (name dep) "-" "_")
+                    target (abspath "src" group-id (str dep ext))]
+              :when (fexists? target)]
+        (sh "ln" "-sr" target dest))
+      (with-dir (abspath "target" lib)
+        (sppit "deps.edn" deps-edn)
+        (sppit "lib.edn" lib-edn)
+        (spit "build" build-contents)
+        (sh "chmod" "+x" "build")))))
 
-(let [cache (memoize (fn [_] (read-string (sh "cat" "lib.edn"))))]
-  (defn- lib-config []
-    (cache (cwd))))
+(defn- jar-file [{:keys [artifact-id version]}]
+  (abspath "target" (str artifact-id "-" version ".jar")))
 
-(defn- jar-file []
-  (let [{:keys [artifact version]} (lib-config)]
-    (path "target" (str artifact "-" version ".jar"))))
+(defn jar [opts]
+  (let [jar-file (jar-file opts)]
+    (sh "rm" "-f" jar-file)
+    (sh "mkdir" "-p" "target/extra/META-INF/")
+    (sh "cp" "pom.xml" "target/extra/META-INF")
+    (skinny/-main "--no-libs" "-e" (abspath "target/extra") "--project-path" jar-file))) ; ?
 
-(defn pom []
-  (pom/-main (sh "cat" "lib.edn")))
-
-(defn jar []
-  (sh "rm" "-f" (jar-file))
-  (sh "mkdir" "-p" "target/extra/META-INF/")
-  (sh "cp" "pom.xml" "target/extra/META-INF")
-  (with-cwd
-    (skinny/-main "--no-libs" "-e" "target/extra" "--project-path" (jar-file))))
-
-(defn- lib-task [command & [fast?]]
+(defn- lib-task [command {:keys [make-jar] :as opts}]
   (assert (contains? #{"install" "deploy"} command))
-  (when (not= fast? "fast")
+  (when make-jar
     (println "generating pom")
-    (pom)
+    (pom/sync-pom opts)
     (println "packaging")
-    (jar)
+    (jar opts)
     (println (str command "ing")))
-  (with-cwd
-    (deps-deploy/-main command (jar-file))))
+  (deps-deploy/-main command (jar-file opts)))
 (def install (partial lib-task "install"))
 (def deploy (partial lib-task "deploy"))
 
-(defn iondeploy [uname]
-  (let [push-out (sh "clojure" "-Adev" "-m" "datomic.ion.dev"
-                     (str {:op :push :uname uname}))
-        _ (print push-out)
-        deploy-cmd (get-in (read-string (str "[" push-out "]")) [1 :deploy-command])
-        deploy-out (sh "bash" "-c" deploy-cmd)
-        _ (print deploy-out)
-        status-cmd (:status-command (read-string deploy-out))]
-    ;todo auto quit
-    (while true
-      (print (sh "bash" "-c" status-cmd))
-      (sh "sleep" "5"))))
+; untested from clj
+;(defn iondeploy [uname]
+;  (let [push-out (sh "clojure" "-Adev" "-m" "datomic.ion.dev"
+;                     (str {:op :push :uname uname}))
+;        _ (print push-out)
+;        deploy-cmd (get-in (read-string (str "[" push-out "]")) [1 :deploy-command])
+;        deploy-out (sh "bash" "-c" deploy-cmd)
+;        _ (print deploy-out)
+;        status-cmd (:status-command (read-string deploy-out))]
+;    ;todo auto quit
+;    (while true
+;      (print (sh "bash" "-c" status-cmd))
+;      (sh "sleep" "5"))))
 
-(defn doc [lib]
-  (let [git-dir (cwd)]
-    (with-sh-dir (:cljdoc-dir (config))
-      (print (sh "./script/cljdoc" "ingest" "-p" (str (:group (config)) "/" lib)
-                 "-v" (:version (config)) "--git" git-dir)))))
+(defn cljdoc [{:keys [group-id artifact-id version cljdoc-dir git-dir]}]
+  (let [git-dir (abspath git-dir)]
+    (with-dir cljdoc-dir
+      (print (sh "./script/cljdoc" "ingest" "-p" (str group-id "/" artifact-id)
+                 "-v" version "--git" git-dir)))))
 
-(defn forall [f & libs]
-  (doseq [lib (get-libs libs)]
-    (with-sh-dir (path "target" lib)
-      (dispatch f))))
+(declare commands)
 
-(defn- dispatch [f & args]
-  (apply ((ns-publics 'trident.build) (symbol f)) args))
+(defn dispatch [opts]
+  (cli/dispatch (merge opts {:commands commands})))
+
+(defn main [{:keys [with-projects all-projects projects]} cmd & args]
+  (let [with-projects (if all-projects (keys projects) with-projects)
+        run #(dispatch {:cmd cmd :args args})]
+    (if with-projects
+      (doseq [p with-projects]
+        (with-dir (abspath "target" p)
+          (run)))
+      (run))))
 
 (defn -main [& args]
-  (apply dispatch args)
-  (shutdown-agents))
+  (System/exit
+    (dispatch {:cmd "main" :args args})))
+
+(def commands
+  {"main" {:fn main
+           :defaults ["trident.edn"]
+           :in-order true
+           :cli-options
+           [["-w" "--with-projects PROJECTS"
+             (str "Colon-separated list of projects. The following command will be "
+                  "executed in each project's directory. Not valid with `reset`.")
+             :parse-fn #(str/split % #":")]
+            ["-a" "--all-projects" (str "Execute the command in each project directory. "
+                                        "Overrides --projects.")]]
+           :subcommands ["reset" "doc" "pom" "jar" "install" "deploy"]}
+   "doc" {:fn cljdoc
+          :defaults ["lib.edn"]
+          :cli-options
+          [["-g" "--group-id ID" "Group ID"]
+           ["-a" "--artifact-id ID" "Artifact ID"]
+           ["-v" "--version VERSION" "Version"]
+           ["-c" "--cljdoc-dir DIR" "cljdoc directory"]
+           ["-d" "--git-dir DIR" "Directory of git repository"
+            :default "."]]}
+   "reset" {:fn reset
+            :defaults ["trident.edn"]}
+   "pom" {:fn pom/sync-pom
+          :defaults ["lib.edn"]}
+   "jar" {:fn jar
+          :defaults ["lib.edn"]}
+   "install" {:fn install
+              :defaults ["lib.edn"]
+              :cli-options
+              [["-j" "--make-jar" "Make jar before installing"
+                :default true]]}
+   "deploy" {:fn deploy
+             :defaults ["lib.edn"]
+             :cli-options
+             [["-j" "--make-jar" "Make jar before installing"
+               :default true]]}})
