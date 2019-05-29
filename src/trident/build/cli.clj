@@ -33,13 +33,17 @@
             [clojure.pprint :refer [pprint]]
             [trident.build.util :refer [maybe-slurp]]))
 
-(defn usage [summary subcommands]
-  (let [lines ["Usage: <program-name> [options] [<args>]"
-               ""
-               "Options:"
-               summary]
-        lines (cond-> lines
-                subcommands (concat ["" (str "Subcommands: " (str/join ", " subcommands))]))]
+(defn usage [{:keys [summary subcommands desc defaults]}]
+  (let [lines (cond-> nil
+                desc (concat [desc ""])
+                true (concat ["Options:" summary])
+                defaults (concat ["" (str "Defaults are overridden by these files: "
+                                          (str/join "," defaults))])
+                subcommands (concat [""
+                                     (str "Subcommands: " (str/join ", " subcommands))
+                                     ""
+                                     (str "See `<program> <command> --help` to read "
+                                          "about a specific subcommand.")]))]
     (str/join \newline lines)))
 
 (defn error-msg [errors]
@@ -62,24 +66,25 @@
   provided, then a `--config EDN` option are also added. This is similar to
   the `clj -Sdeps EDN` option."
   [{:keys [args cli-options defaults subcommands validate-fn]
-    :or {validate-fn (constantly true) }}]
-  (let [in-order (boolean subcommands)
+    :or {validate-fn (constantly true)} :as opts}]
+  (let [subcommands? (boolean subcommands)
         cli-options (cond-> cli-options
                       defaults (conj [nil "--config EDN"
                                       (str "Config data to use as the last "
-                                           "config file. Overrides cli options.")])
+                                           "config file. Overrides CLI options.")])
                       true (conj ["-h" "--help"]))
-        {:keys [options arguments errors summary]} (parse-opts args cli-options :in-order in-order)
+        {:keys [options arguments errors summary]} (parse-opts args cli-options :in-order subcommands?)
         options (apply merge options
                        (concat
                          (->> defaults
                               (map #(some-> % maybe-slurp read-string))
                               (remove nil?))
-                         [(:options (parse-opts args cli-options :in-order in-order :no-defaults true))]))
-        options (merge options (when defaults (:config options)))]
+                         [(:options (parse-opts args cli-options :in-order subcommands? :no-defaults true))]))
+        options (merge options (when defaults (:config options)))
+        usage (usage (assoc opts :summary summary))]
     (cond
       (:help options)
-      {:exit-code 0 :exit-msg (usage summary subcommands)}
+      {:exit-code 0 :exit-msg usage}
 
       errors
       {:exit-code 1 :exit-msg (error-msg errors)}
@@ -88,7 +93,7 @@
       {:opts options :args arguments}
 
       :else
-      {:exit-code 1 :exit-msg (usage summary subcommands)})))
+      {:exit-code 1 :exit-msg usage})))
 
 (defn dispatch
   "Parses `args` using [[validate-args]] and passes them to the function
