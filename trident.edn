@@ -1,4 +1,4 @@
-{:version "0.1.1-2-SNAPSHOT"
+{:version "0.1.1-3-SNAPSHOT"
  :group-id "trident"
  :github-repo "jacobobryant/trident"
  :cljdoc-dir "/home/arch/dev/cljdoc/"
