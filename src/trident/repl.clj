@@ -22,6 +22,9 @@
    (nrepl/start-server :port nrepl-port)
    (go)))
 
+(defn goto [sym]
+  (doto sym require in-ns))
+
 (in-ns 'trident.repl)
 
 (comment

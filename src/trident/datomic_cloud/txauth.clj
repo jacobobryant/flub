@@ -3,7 +3,8 @@
             [datomic.client.api :as d]
             [orchestra.core :refer [defn-spec]]
             [taoensso.timbre :refer [debug]]
-            [trident.util :as u]))
+            [trident.util :as u]
+            [trident.util.datomic :as ud]))
 
 (defn exists?
   ([db eid]
@@ -15,7 +16,7 @@
   [db any? spec any? ent map?]
   (and (s/valid? spec ent)
        (u/for-every? [[k vs] ent
-                      v (u/wrap-vec vs)
+                      v (ud/wrap-vec vs)
                       :when (and (map? v)
                                  (contains? (s/registry) k))]
          (let [ent (if (empty? (dissoc v :db/id :db/ident))

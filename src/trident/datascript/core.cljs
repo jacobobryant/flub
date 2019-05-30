@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [datascript.core :as d]
             [trident.util :as u]
+            [trident.util.datomic :as ud]
             [cljs-time.instant]
             [cljs-time.coerce :refer [from-date]]
             [clojure.walk :refer [postwalk]]
@@ -37,7 +38,7 @@
 (defn transact! [persist-fn conn tx & queries]
   (let [tx-result (d/transact! conn tx)]
     (apply invalidate! queries)
-    (go (let [tx (u/translate-eids (:schema @conn) (::eids @conn) tx)
+    (go (let [tx (ud/translate-eids (:schema @conn) (::eids @conn) tx)
               eids (<! (persist-fn tx))
               tempids (reverse-tempids tx-result eids)]
           (swap! conn update ::eids merge tempids)))

@@ -1,7 +1,7 @@
 (ns trident.util.datomic
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [trident.util.core :as u]
+            [trident.util :as u]
             [orchestra.core :refer [defn-spec]]
             [clojure.set :refer [difference]]))
 
@@ -79,7 +79,6 @@
        (into {})))
 
 (defn translate-eids [ds-schema eids tx]
-  (u/capture ds-schema eids tx)
   (let [ds-schema (assoc ds-schema :db/id {:db/valueType :db.type/ref})]
     (for [form tx]
       (if (map? form)
@@ -122,11 +121,11 @@
 
 #?(:clj
 
-(defn eval-txes [db tx]
+(defn eval-tx-fns [db tx]
   (apply concat
          (for [[op & args :as form] tx]
            (if (symbol? op)
-             (eval-txes db (apply (u/loadf op) db args))
+             (eval-tx-fns db (apply (u/loadf op) db args))
              [form]))))
 
 )

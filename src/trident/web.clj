@@ -1,5 +1,7 @@
 (ns trident.web
   (:require [trident.util :as u]
+            [trident.util.datomic :as ud]
+            [trident.ring :refer [wrap-ion-defaults]]
             [trident.datomic-cloud.txauth :as txauth]
             [trident.datomic-cloud.client :refer [connect]]
             [trident.firebase :refer [verify-token]]
@@ -31,7 +33,7 @@
   (do
     (d/create-database client (select-keys config [:db-name]))
     (let [conn (connect client (select-keys config [:db-name :local-tx-fns?]))]
-      (d/transact conn {:tx-data (u/datomic-schema (:schema config))})
+      (d/transact conn {:tx-data (ud/datomic-schema (:schema config))})
       conn)))
 
 (defn init-handler [{:keys [claims uid] :as req}]
@@ -58,6 +60,6 @@
   (init-config! default-config (ion/get-env))
   (jion/init-config! (select-keys config [:env :app-name]))
 
-  (def handler* (u/wrap-ion-defaults routes (merge (select-keys config [:origins :uid-opts])
-                                                   {:conn-var #'conn})))
+  (def handler* (wrap-ion-defaults routes (merge (select-keys config [:origins :uid-opts])
+                                                 {:conn-var #'conn})))
   (def handler (ionize handler*)))

@@ -1,5 +1,6 @@
 (ns trident.build.pom
-  (:require [trident.build.xml :refer [xml-replace]]
+  (:require [clojure.zip :as zip]
+            [clojure.data.zip.xml :as zipx]
             [trident.build.util :refer [abspath sh]]
             [clojure.data.xml :as xml]
             [clojure.tools.deps.alpha.gen.pom :as gen.pom]
@@ -10,7 +11,29 @@
 
 (xml/alias-uri 'pom "http://maven.apache.org/POM/4.0.0")
 
-(defn sync-pom [{:keys [group-id artifact-id version github-repo]}]
+(defn xml-replace
+  "Replaces the value of the first `k` tag with `v`"
+  ([xml k v]
+   (-> xml
+       zip/xml-zip
+       (zipx/xml1-> k)
+       zip/down
+       (zip/replace v)
+       zip/root))
+  ([xml k v & kvs]
+   (let [ret (xml-replace xml k v)]
+     (if kvs
+       (if (next kvs)
+         (recur ret (first kvs) (second kvs) (nnext kvs))
+         (throw (IllegalArgumentException.
+                  "xml-replace expects even number of arguments after map, found odd number")))
+       ret))))
+
+(defn sync-pom
+  "Build task for generating pom.xml.
+
+  See `trident.build` for usage."
+  [{:keys [group-id artifact-id version github-repo]}]
   (let [clean? (= "" (sh "git" "status" "--porcelain"))
         _ (when (not (or clean? (ends-with? version "SNAPSHOT")))
             (throw (ex-info "Can't do a non-snapshot release without a clean commit" {})))

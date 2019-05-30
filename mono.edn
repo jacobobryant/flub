@@ -1,10 +1,20 @@
-{:version "0.1.2"
+{:version "0.1.3-SNAPSHOT"
  :group-id "trident"
  :github-repo "jacobobryant/trident"
  :cljdoc-dir "/home/arch/dev/cljdoc/"
- :aliases {:dev {:extra-deps {trident-repl {:local/root "/home/arch/dev/trident/target/repl"}}}}
+ :aliases {:dev {:extra-deps {trident-repl {:local/root "../repl"}}}}
  :projects
- {build         {:deps [org.clojure/data.xml
+ {repl          {:deps [org.clojure/tools.namespace
+                        mount
+                        orchestra
+                        nrepl]}
+  util          {:deps [org.clojure/core.async
+                        orchestra
+                        com.taoensso/encore
+                        potemkin
+                        org.clojure/tools.deps.alpha]}
+  build         {:local-deps [util]
+                 :deps [org.clojure/data.xml
                         org.clojure/data.zip
                         deps-deploy
                         me.raynes/fs
@@ -14,58 +24,40 @@
                         com.github.jnr/jnr-posix
                         com.sun.jna/jna
                         org.clojure/tools.deps.alpha]}
-  repl          {:deps [org.clojure/tools.namespace
-                        mount
-                        orchestra
-                        nrepl]}
-  util          {:deps [org.clojure/clojure
-                        org.clojure/data.xml
-                        org.clojure/data.zip
-                        org.clojure/core.async
-                        orchestra
-                        potemkin
+  ring          {:deps [com.taoensso/timbre
                         mount
                         ring/ring-defaults
                         ring-cors
-                        ring-middleware-format
-                        com.taoensso/timbre
-                        com.taoensso/encore
-                        org.clojure/tools.deps.alpha]}
+                        ring-middleware-format]}
   firebase      {:deps [com.google.firebase/firebase-admin]}
   views         {:local-deps [util]
-                 :deps [org.clojure/clojure
-                        hiccup
+                 :deps [hiccup
                         re-com
                         garden]}
   ion           {:local-deps [util]
-                 :deps [org.clojure/clojure
-                        com.datomic/ion
+                 :deps [com.datomic/ion
                         com.taoensso/timbre]}
   datascript    {:local-deps [util]
                  :deps [datascript
                         reagent
                         com.andrewmcveigh/cljs-time]}
   datomic       {:local-deps [util]
-                 :deps [org.clojure/clojure
-                        com.datomic/datomic-free
+                 :deps [com.datomic/datomic-free
                         me.raynes/fs]}
   datomic-cloud {:local-deps [util]
-                 :deps [org.clojure/clojure
-                        com.datomic/client-cloud
+                 :deps [com.datomic/client-cloud
                         com.taoensso/timbre
                         orchestra]}
-  web           {:local-deps [util datomic-cloud firebase ion]
+  web           {:local-deps [util datomic-cloud firebase ion ring]
                  :deps [com.datomic/client-cloud
                         mount
                         com.datomic/ion
-                        org.clojure/clojure
                         orchestra]}
   frontend      {:local-deps [util datascript views]}
   web-repl      {:local-deps [web]
                  :deps [org.immutant/web
                         nrepl
                         org.clojure/tools.namespace]}
-  trident       {:local-deps [datomic frontend web-repl repl build]}
   docs          {:local-deps [datomic frontend datomic-cloud firebase repl build]}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
  :managed-deps
