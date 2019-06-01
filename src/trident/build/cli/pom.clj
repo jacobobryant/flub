@@ -1,7 +1,9 @@
-(ns trident.build.pom
+(ns trident.build.cli.pom
   (:require [clojure.zip :as zip]
             [clojure.data.zip.xml :as zipx]
-            [trident.build.util :refer [abspath sh]]
+            [trident.build.util :refer [path sh]]
+            [trident.build.cli :refer [defcli]]
+            [trident.build.lib :refer [cli-options]]
             [clojure.data.xml :as xml]
             [clojure.tools.deps.alpha.gen.pom :as gen.pom]
             [clojure.java.io :as io]
@@ -31,18 +33,17 @@
 
 (defn sync-pom
   "Build task for generating pom.xml.
-
   See `trident.build` for usage."
   [{:keys [group-id artifact-id version github-repo]}]
   (let [clean? (= "" (sh "git" "status" "--porcelain"))
         _ (when (not (or clean? (ends-with? version "SNAPSHOT")))
             (throw (ex-info "Can't do a non-snapshot release without a clean commit" {})))
         commit (trim (sh "git" "rev-list" "-n" "1" "HEAD"))
-        pom-path (abspath "pom.xml")]
+        pom-path (path "pom.xml")]
     (io/delete-file pom-path true)
     (gen.pom/sync-pom
-      (read-deps [(io/file (abspath "deps.edn"))])
-      (io/file (abspath ".")))
+      (read-deps [(io/file (path "deps.edn"))])
+      (io/file (path ".")))
     (-> pom-path io/file io/input-stream xml/parse
         (xml-replace
           ::pom/groupId group-id
@@ -59,3 +60,10 @@
         zip/root
         xml/indent-str
         (->> (spit pom-path)))))
+
+(defcli
+  {:fn sync-pom
+   :desc "Generates a new pom.xml in the current directory (overwrites any existing pom.xml)."
+   :config ["lib.edn"]
+   :cli-options [:group-id :artifact-id :version :github-repo]}
+  cli-options)

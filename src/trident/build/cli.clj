@@ -1,14 +1,14 @@
 (ns trident.build.cli
   "Tools for wrapping build tasks (commands) in CLI interfaces.
 
-  This is basically a highel-level wrapper over `clojure.tools.cli`. Most users
+  This is basically a higher-level wrapper over `clojure.tools.cli`. Most users
   will need only [[dispatch]] and [[defcmds]]. See `trident.build` for example
   usage."
   (:require [trident.util :as u]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
-            [trident.build.util :refer [maybe-slurp]]))
+            [trident.build.util :refer [maybe-slurp with-no-shutdown]]))
 
 (defn usage [{:keys [summary subcommands desc args-desc config]}]
   "Returns a usage string. `summary` is returned from
@@ -55,6 +55,7 @@
   then a `--config EDN` option are also added. This is similar to the
   `clj -Sdeps EDN` option."
   [{:keys [args cli-options config subcommands] :as opts}]
+  ; TODO update this, rename stuff to dispatch!
   (let [subcommands? (boolean subcommands)
         cli-options (cond-> (vec cli-options)
                       config (conj [nil "--config EDN"
@@ -80,6 +81,21 @@
       :else
       {:opts options :args arguments})))
 
+(defn- dispatch-subcommand
+  ([args subcommands wrapper]
+   (let [[cmd & args] args
+         cli (subcommands cmd)]
+     (if (some? cli)
+       (wrapper #(dispatch args cli))
+       (do
+         (println "Command not recognized:" cmd)
+         1))))
+  ([args subcommands]
+   (dispatch-subcommand args subcommands apply)))
+
+(defn- exit [x]
+  (if (integer? x) x 0))
+
 (defn dispatch
   "Calls the function specified by `cmd`, `args` and `commands`.
 
@@ -90,20 +106,20 @@
 
   ```
   (ns hello.core
-    (:require [trident.build.cli :refer [dispatch defcmds]]
-              [clojure.string :as str]))
+  (:require [trident.build.cli :refer [dispatch defcmds]]
+  [clojure.string :as str]))
 
   (defn hello [{:keys [capitalize]} the-name]
-    (println \"Hello,\" (cond-> the-name capitalize str/capitalize)))
+  (println \"Hello,\" (cond-> the-name capitalize str/capitalize)))
 
   (def cli-options
-    {:capitalize [[\"-c\" nil \"Capitalize the name\"]]})
+  {:capitalize [[\"-c\" nil \"Capitalize the name\"]]})
 
   (defcmds commands cli-options
-    {\"hello\" {:fn hello :cli-options [:capitalize]}})
+  {\"hello\" {:fn hello :cli-options [:capitalize]}})
 
   (defn -main [& args]
-    (System/exit (dispatch args commands)))
+  (System/exit (dispatch args commands)))
 
   ; clj -m hello.core hello -c alice
   ; -> \"Hello, Alice\"
@@ -116,7 +132,7 @@
   (def cli-options [[\"-f\" \"--foo FOO\" \"The foo\"]])
   ```
   You would write:
- ```
+  ```
   (def cli-options {:foo [\"-f\" \"FOO\" \"The foo\"]})
   ```
 
@@ -132,43 +148,52 @@
   | `:append`        | A map of `cli-options` keys to strings, e.g. `{:my-option \" (This will be appended to :my-option's description)\"}`.
   | `:config`        | A collection of filenames containing EDN. The contents of these files will override any defaults set in `cli-options`.
   | `:subcommands`   | A map of commands (as described in [[dispatch]]) supported by the current command."
-  [[cmd & args] commands]
-  (let [cmd-opts (commands cmd)
-        {:keys [opts args exit-code exit-msg]
-         :or {exit-code 0}}
-        (validate-args (-> cmd-opts
-                           (dissoc :fn)
-                           (assoc :args args)))]
-    (if exit-msg
-      (do
-        (println exit-msg)
-        exit-code)
-      (or (apply (:fn cmd-opts) opts args) 0))))
+  [args cli]
+  (exit
+    (if (fn? cli)
+      (with-no-shutdown
+        (apply cli args))
+      (let [{:keys [wrap subcommands] f :fn} cli]
+        (if (= nil f wrap)
+          (dispatch-subcommand args subcommands)
+          (let [{:keys [opts args exit-code exit-msg]
+                 :or {exit-code 0}}
+                (validate-args (assoc cli :args args))]
+            (if exit-msg
+              (do
+                (println exit-msg)
+                exit-code)
+              (with-no-shutdown
+                (if (some? f)
+                  (apply f opts args)
+                  (dispatch-subcommand args subcommands #(wrap opts %)))))))))))
 
-(defn expand-commands [cli-options commands]
-  "Returns `commands` in a format suitable for [[dispatch]].
+(defn- reduce-options [{option-keys :cli-options :as cli} options]
+  (let [options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) " " %))])
+                          (select-keys options option-keys))
+        options (if-not (contains? cli :append)
+                  options
+                  (reduce-kv
+                    (fn [options opt addendum]
+                      (update-in options [opt 2] #(str % addendum)))
+                    options
+                    (:append cli)))]
+    (update cli :cli-options #(u/pred-> % keyword? options))))
 
-  See [[dispatch]] for information about `cli-options` and `commands`."
-  (let [cli-options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) " " %))])
-                              cli-options)]
-    (u/map-kv (fn [k cmd]
-                (let [cli-options
-                      (if (contains? cmd :append)
-                        (reduce-kv
-                          (fn [cli-options opt addendum]
-                            (update-in cli-options [opt 2] #(str % addendum)))
-                          cli-options
-                          (:append cmd))
-                        cli-options)]
-                  [k
-                   (if (contains? cmd :cli-options)
-                     (update cmd :cli-options #(vals (select-keys cli-options %)))
-                     cmd)]))
-              commands)))
+(defn reduce-cli
+  ([cli options]
+   (if-not (map? cli)
+     cli
+     (cond-> cli
+       (contains? cli :cli-options) (reduce-options options)
 
-(defmacro defcmds [sym cli-options commands]
-  "Defines commands in a format suitable for [[dispatch]].
+       (contains? cli :subcommands)
+       (update :subcommands (partial u/map-kv #(vector %1 (reduce-cli %2 options)))))))
+  ([cli] cli))
 
-  Same as `(def sym (expand-commands cli-options commands))`. See [[dispatch]]
-  for information about `cli-options` and `commands`."
-  `(def ~sym (expand-commands ~cli-options ~commands)))
+; auto add docstring to fn based on cli? auto spec stuff (or derive stuff from spec)?
+(defmacro defcli [& args]
+  `(do
+     (def ~'cli (apply reduce-cli ~args))
+     (defn ~'-main [& args#]
+       (dispatch args# ~'cli))))

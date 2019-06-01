@@ -1,10 +1,10 @@
-(ns trident.build.mono
+(ns trident.build.cli.mono
   "Build tasks for working with projects defined by mono.edn
 
   See `trident.build` for usage."
   (:require [clojure.set :refer [union difference]]
-            [trident.build.util :refer [sh abspath fexists? sppit with-dir]]
-            [trident.build.cli :refer [dispatch]]
+            [trident.build.util :refer [sh path fexists? sppit with-dir]]
+            [trident.build.cli :refer [defcli reduce-cli]]
             [clojure.string :as str]))
 
 (defn- get-deps [projects lib]
@@ -35,7 +35,7 @@ set -x
 
 (defn mono [{:keys [projects group-id managed-deps] :as opts} & libs]
   (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))]
-    (let [dest (abspath "target" lib "src" group-id)
+    (let [dest (path "target" lib "src" group-id)
           [local-deps maven-deps] (if (= lib group-id)
                                     [(keys projects) (keys managed-deps)]
                                     (get-deps projects lib))
@@ -45,27 +45,47 @@ set -x
                           (select-keys opts [:mvn/repos :aliases]))
           lib-edn (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
                          {:artifact-id (str lib)
-                          :git-dir (abspath ".")})]
+                          :git-dir (path ".")})]
       ; TODO use me.raynes.fs
       (sh "rm" "-rf" dest)
       (sh "mkdir" "-p" dest)
       (doseq [dep local-deps
               ext [".clj" ".cljs" ".cljc" "/"]
               :let [dep (str/replace (name dep) "-" "_")
-                    target (abspath "src" group-id (str dep ext))]
+                    target (path "src" group-id (str dep ext))]
               :when (fexists? target)]
         (sh "ln" "-sr" target dest))
-      (with-dir (abspath "target" lib)
+      (with-dir (path "target" lib)
         (sppit "deps.edn" deps-edn)
         (sppit "lib.edn" lib-edn)
         (spit "build" build-contents)
         (sh "chmod" "+x" "build")))))
 
-(defn main [commands {:keys [with-projects all-projects projects]} & args]
-  (let [with-projects (if all-projects (keys projects) with-projects)
-        run #(dispatch args commands)]
-    (if with-projects
-      (doseq [p with-projects]
-        (with-dir (abspath "target" p)
-          (run)))
-      (run))))
+(defcli
+  {:fn mono
+   :desc ["Creates project directories according to mono.edn."
+          "If no projects are specified, operate on all projects."]
+   :args-desc "[<project(s)>]"
+   :config ["mono.edn"]})
+
+(defn- wrap-dir* [{:keys [with-projects all-projects projects]} subcommand]
+  (if-some [with-projects (if all-projects (keys projects) with-projects)]
+    (doseq [p with-projects]
+      (with-dir (path "target" p)
+        (subcommand)))
+    (subcommand)))
+
+(def cli-options
+  {:with-projects ["-w" "PROJECTS" (str "Colon-separated list of projects. The subcommand will "
+                                        "be executed in `target/<project>` for each project.")
+                   :parse-fn #(str/split % #":")]
+   :all-projects  ["-a" nil (str "Execute the command in each project directory (as defined by"
+                                 " mono.edn). Overrides --with-projects.")]})
+
+(defn wrap-dir [subcommands]
+  (reduce-cli
+    {:wrap wrap-dir*
+     :config ["mono.edn"]
+     :cli-options [:with-projects :all-projects]
+     :subcommands subcommands}
+    cli-options))

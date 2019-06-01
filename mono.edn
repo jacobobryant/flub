@@ -21,8 +21,8 @@
                         org.clojure/tools.cli
                         orchestra
                         jobryant/pack
+                        net.java.dev.jna/jna
                         com.github.jnr/jnr-posix
-                        com.sun.jna/jna
                         org.clojure/tools.deps.alpha]}
   ring          {:deps [com.taoensso/timbre
                         mount
@@ -67,7 +67,6 @@
   com.datomic/ion {:mvn/version "0.9.28"}
   com.github.jnr/jnr-posix {:mvn/version "3.0.49"}
   com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
-  com.sun.jna/jna {:mvn/version "3.0.9"}
   com.taoensso/encore {:mvn/version "2.112.0"}
   com.taoensso/timbre {:mvn/version "4.10.0"}
   datascript {:mvn/version "0.18.2"}
@@ -77,6 +76,7 @@
   jobryant/pack {:mvn/version "1.0"}
   me.raynes/fs {:mvn/version "1.4.6"}
   mount {:mvn/version "0.1.15"}
+  net.java.dev.jna/jna {:mvn/version "5.3.1"}
   nrepl {:mvn/version "0.6.0"}
   orchestra {:mvn/version "2019.02.06-1"}
   org.clojure/clojure {:mvn/version "1.9.0"}
