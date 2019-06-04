@@ -1,10 +1,8 @@
-(ns trident.build.cli.mono
-  "Build tasks for working with projects defined by mono.edn
-
-  See `trident.build` for usage."
+(ns trident.build.mono
+  "Build tasks for working with projects defined by mono.edn"
   (:require [clojure.set :refer [union difference]]
-            [trident.build.util :refer [sh path fexists? sppit with-dir]]
-            [trident.build.cli :refer [defcli reduce-cli]]
+            [trident.cli :refer [defcli reduce-cli]]
+            [trident.cli.util :refer [sh path fexists? sppit with-dir]]
             [clojure.string :as str]))
 
 (defn- get-deps [projects lib]
@@ -33,7 +31,10 @@ set -x
 \"$@\"
 ")
 
-(defn mono [{:keys [projects group-id managed-deps] :as opts} & libs]
+(defn mono
+  "Creates project directories according to mono.edn.
+  If no projects are specified, operate on all projects."
+  [{:keys [projects group-id managed-deps] :as opts} & libs]
   (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))]
     (let [dest (path "target" lib "src" group-id)
           [local-deps maven-deps] (if (= lib group-id)
@@ -62,9 +63,7 @@ set -x
         (sh "chmod" "+x" "build")))))
 
 (defcli
-  {:fn mono
-   :desc ["Creates project directories according to mono.edn."
-          "If no projects are specified, operate on all projects."]
+  {:fn #'mono
    :args-desc "[<project(s)>]"
    :config ["mono.edn"]})
 

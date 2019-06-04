@@ -1,4 +1,4 @@
-(ns trident.build.cli
+(ns trident.cli
   "Tools for wrapping build tasks (commands) in CLI interfaces.
 
   This is basically a higher-level wrapper over `clojure.tools.cli`. Most users
@@ -8,9 +8,18 @@
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
-            [trident.build.util :refer [maybe-slurp with-no-shutdown]]))
+            [trident.cli.util :refer [maybe-slurp with-no-shutdown]]))
 
-(defn usage [{:keys [summary subcommands desc args-desc config]}]
+(defn- cli-desc [{:keys [cli short?] :or {short? true}}]
+  (cond
+    (symbol? cli) (let [{cli' ::cli doc' :doc} (-> cli resolve meta)]
+                    (cond
+                      (some? cli') (cli-desc cli')
+                      (some? doc') (cond-> doc' short? first)))
+    (map? cli) (or (:desc cli) (cli-desc {:cli (:fn cli) :short? short?}))
+    :default (if short? "" [])))
+
+(defn usage [{:keys [summary subcommands desc args-desc config] :as cli}]
   "Returns a usage string. `summary` is returned from
   `clojure.tools.cli/parse-opts`. The other keys are described in [[dispatch]]."
   (let [subcommand-len (apply max 0 (map (comp count name) (keys subcommands)))]
@@ -21,13 +30,13 @@
                           "<subcommand> [<args>]"
                           args-desc))
                    ""]
-      desc        [desc ""]
+      true        (some-> (:desc cli) not-empty (concat [""]))
       summary     ["Options:" summary ""]
       config      [(str "Config files: " (str/join "," config)) ""]
       subcommands ["Subcommands:"
                    (u/text-columns
-                     (for [[cmd-name {:keys [desc]}] subcommands]
-                       ["  " cmd-name "  " (u/pred-> desc (comp not string?) first)]))
+                     (for [[cmd-name cli] subcommands]
+                       ["  " cmd-name "  " (or (first (:desc cli)) "")]))
                    ""
                    (str "See `<program> <subcommand> --help` to read about a specific subcommand.")])))
 
@@ -38,7 +47,7 @@
 
 (defn validate-args
   "Parses `args` using `clojure.tools.cli`. Returns a map that includes
-  either `:exit-code` and `:exit-msg` OR `:opts` and `:args`.
+  either `:code` and `:exit-msg` OR `:opts` and `:args`.
 
   Recognized keys include:
 
@@ -57,11 +66,6 @@
   [{:keys [args cli-options config subcommands] :as opts}]
   ; TODO update this, rename stuff to dispatch!
   (let [subcommands? (boolean subcommands)
-        cli-options (cond-> (vec cli-options)
-                      config (conj [nil "--config EDN"
-                                    (str "Config data to use as the last "
-                                         "config file. Overrides CLI options.")])
-                      true (conj ["-h" "--help"]))
         {:keys [options arguments errors summary]} (parse-opts args cli-options :in-order subcommands?)
         options (apply merge options
                        (concat
@@ -73,13 +77,15 @@
         usage (usage (assoc opts :summary summary))]
     (cond
       (:help options)
-      {:exit-code 0 :exit-msg usage}
+      {:code 0 :exit-msg usage}
 
       errors
-      {:exit-code 1 :exit-msg (error-msg errors)}
+      {:code 1 :exit-msg (error-msg errors)}
 
       :else
       {:opts options :args arguments})))
+
+(declare dispatch)
 
 (defn- dispatch-subcommand
   ([args subcommands wrapper]
@@ -93,7 +99,7 @@
   ([args subcommands]
    (dispatch-subcommand args subcommands apply)))
 
-(defn- exit [x]
+(defn- exit-code [x]
   (if (integer? x) x 0))
 
 (defn dispatch
@@ -149,24 +155,20 @@
   | `:config`        | A collection of filenames containing EDN. The contents of these files will override any defaults set in `cli-options`.
   | `:subcommands`   | A map of commands (as described in [[dispatch]]) supported by the current command."
   [args cli]
-  (exit
-    (if (fn? cli)
-      (with-no-shutdown
-        (apply cli args))
-      (let [{:keys [wrap subcommands] f :fn} cli]
-        (if (= nil f wrap)
-          (dispatch-subcommand args subcommands)
-          (let [{:keys [opts args exit-code exit-msg]
-                 :or {exit-code 0}}
-                (validate-args (assoc cli :args args))]
-            (if exit-msg
-              (do
-                (println exit-msg)
-                exit-code)
-              (with-no-shutdown
-                (if (some? f)
-                  (apply f opts args)
-                  (dispatch-subcommand args subcommands #(wrap opts %)))))))))))
+  (exit-code
+    (let [{:keys [wrap subcommands] f :fn} cli]
+      (if (= nil f wrap)
+        (dispatch-subcommand args subcommands)
+        (let [{:keys [opts args code exit-msg]}
+              (validate-args (assoc cli :args args))]
+          (if exit-msg
+            (do
+              (println exit-msg)
+              code)
+            (with-no-shutdown
+              (if (some? f)
+                (apply f opts args)
+                (dispatch-subcommand args subcommands #(wrap opts %))))))))))
 
 (defn- reduce-options [{option-keys :cli-options :as cli} options]
   (let [options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) " " %))])
@@ -175,25 +177,36 @@
                   options
                   (reduce-kv
                     (fn [options opt addendum]
-                      (update-in options [opt 2] #(str % addendum)))
+                      (update-in options [opt 2] str addendum))
                     options
                     (:append cli)))]
-    (update cli :cli-options #(u/pred-> % keyword? options))))
+    (update cli :cli-options (fn [x] (map #(u/pred-> % keyword? options) x)))))
+
+(def ^:private config-opt
+  [nil "--config EDN" "Config data to use as the last config file. Overrides CLI options."])
 
 (defn reduce-cli
   ([cli options]
-   (if-not (map? cli)
+   (if (::reduced (meta cli))
      cli
-     (cond-> cli
-       (contains? cli :cli-options) (reduce-options options)
-
-       (contains? cli :subcommands)
-       (update :subcommands (partial u/map-kv #(vector %1 (reduce-cli %2 options)))))))
-  ([cli] cli))
+     (u/condas-> cli x
+       (var? x)                        {:fn @x
+                                        :desc (u/doclines x)}
+       (and (var? (:fn x))
+            (not (contains? x :desc))) (assoc x :desc (u/doclines (:fn x)))
+       (var? (:fn x))                  (update x :fn deref)
+       (contains? x :cli-options)      (reduce-options x options)
+       (contains? x :config)           (update x :cli-options #(conj (vec %) config-opt))
+       (contains? x :cli-options)      (update x :cli-options #(conj (vec %) ["-h" "--help"]))
+       (contains? x :subcommands)      (->> #(vector %1 (reduce-cli %2 options))
+                                            (partial u/map-kv)
+                                            (update x :subcommands))
+       true                            (with-meta x {::reduced true}))))
+  ([cli] (reduce-cli cli {})))
 
 ; auto add docstring to fn based on cli? auto spec stuff (or derive stuff from spec)?
-(defmacro defcli [& args]
+(defmacro defcli [cli & args]
   `(do
-     (def ~'cli (apply reduce-cli ~args))
-     (defn ~'-main [& args#]
-       (dispatch args# ~'cli))))
+     (def ~'cli (reduce-cli ~cli ~@args))
+     (defn  ~'-main [& args#]
+       (identity #_System/exit (dispatch args# ~'cli)))))

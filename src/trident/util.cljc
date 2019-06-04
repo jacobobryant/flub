@@ -91,9 +91,9 @@
          :members
          (filter #(contains? % :parameter-types))
          (mapv (juxt :name (comp inc count :parameter-types))))
-    (for [{_name :name arglists :arglists} (vals (:sigs @interface))
+    (for [{-name :name arglists :arglists} (vals (:sigs @interface))
           arglist arglists]
-      [_name (count arglist)])))
+      [-name (count arglist)])))
 
 (defmacro inherit [child-name [parent-instance :as fields] & overrides]
   (s/assert ::overrides overrides)
@@ -105,13 +105,13 @@
                                                    (count (second form))] form]))
                                  (into {}))]
            `[~interface
-             ~@(for [[_name argcount :as sig] (sigs interface')]
+             ~@(for [[-name argcount :as sig] (sigs interface')]
                  (or (override-fns sig)
                      (let [arglist (vec (conj (repeatedly (dec argcount) gensym) '_))
                            parent-method (if (class? interface')
-                                           (symbol (str "." (name _name)))
-                                           (symbol (namespace interface) (name _name)))]
-                       `(~_name
+                                           (symbol (str "." (name -name)))
+                                           (symbol (namespace interface) (name -name)))]
+                       `(~-name
                           ~arglist
                           (~parent-method
                             ~parent-instance
@@ -241,3 +241,12 @@
 
 (defn map-kv [f xs]
   (into {} (map (fn [[k v]] (f k v)) xs)))
+
+(defn doclines [-var]
+  (when-some [-doc (:doc (meta -var))]
+    (let [lines (str/split -doc #"\n")
+          indent (->> (rest lines)
+                      (map #(count (re-find #"^ *" %)))
+                      (apply min 0))]
+      (map-indexed #(cond-> %2 (not (zero? %1)) (subs indent))
+                   lines))))

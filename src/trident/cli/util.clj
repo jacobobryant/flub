@@ -1,4 +1,4 @@
-(ns trident.build.util
+(ns trident.cli.util
   (:require [clojure.java.shell :as shell]
             [clojure.pprint :refer [pprint]]
             [clojure.string :refer [split join starts-with? trim]]
@@ -102,4 +102,4 @@
           (throw result)))))
 
 (defmacro with-no-shutdown [& forms]
-  `(with-no-shutdown (fn [] @~forms)))
+  `(with-no-shutdown* (fn [] ~@forms)))

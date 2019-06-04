@@ -1,7 +1,7 @@
-(ns trident.build.cli.deploy
+(ns trident.build.deploy
   "Miscellaneous build tasks.
   See `trident.build` for usage."
-  (:require [trident.build.cli :refer [defcli]]
+  (:require [trident.cli :refer [defcli]]
             [trident.build.pom :refer [sync-pom]]
             [trident.build.jar :refer [jar]]
             [trident.build.lib :refer [cli-options jar-file]]

@@ -1,16 +1,16 @@
 (ns trident.build
-  (:require [trident.build.cli :refer [defcli]]
-            [trident.build.cli.mono :as mono]
-            [trident.build.cli.cljdoc :as cljdoc]
-            [trident.build.cli.pom :as pom]
-            [trident.build.cli.jar :as jar]
-            [trident.build.cli.deploy :as deploy]))
+  (:require [trident.cli :refer [defcli]]
+            [trident.build.mono :as mono]
+            [trident.build.cljdoc :as cljdoc]
+            [trident.build.pom :as pom]
+            [trident.build.jar :as jar]
+            [trident.build.deploy :as deploy]))
 
 (defcli
   (mono/wrap-dir
     (merge
-      {"mono" mono/-main
-       "doc" cljdoc/-main
-       "pom" pom/-main
-       "jar" jar/-main}
+      {"mono" mono/cli
+       "doc" cljdoc/cli
+       "pom" pom/cli
+       "jar" jar/cli}
       (:subcommands deploy/cli))))

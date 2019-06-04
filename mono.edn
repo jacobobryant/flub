@@ -13,16 +13,18 @@
                         com.taoensso/encore
                         potemkin
                         org.clojure/tools.deps.alpha]}
-  build         {:local-deps [util]
+  cli           {:local-deps [util]
+                 :deps [me.raynes/fs
+                        org.clojure/tools.cli
+                        net.java.dev.jna/jna
+                        com.github.jnr/jnr-posix]}
+  build         {:local-deps [util cli]
                  :deps [org.clojure/data.xml
                         org.clojure/data.zip
                         deps-deploy
                         me.raynes/fs
-                        org.clojure/tools.cli
                         orchestra
                         jobryant/pack
-                        net.java.dev.jna/jna
-                        com.github.jnr/jnr-posix
                         org.clojure/tools.deps.alpha]}
   ring          {:deps [com.taoensso/timbre
                         mount

@@ -1,8 +1,8 @@
-(ns trident.build.cli.pom
+(ns trident.build.pom
   (:require [clojure.zip :as zip]
             [clojure.data.zip.xml :as zipx]
-            [trident.build.util :refer [path sh]]
-            [trident.build.cli :refer [defcli]]
+            [trident.cli :refer [defcli]]
+            [trident.cli.util :refer [path sh]]
             [trident.build.lib :refer [cli-options]]
             [clojure.data.xml :as xml]
             [clojure.tools.deps.alpha.gen.pom :as gen.pom]
@@ -32,8 +32,7 @@
        ret))))
 
 (defn sync-pom
-  "Build task for generating pom.xml.
-  See `trident.build` for usage."
+  "Generates a new pom.xml in the current directory (overwrites any existing pom.xml)."
   [{:keys [group-id artifact-id version github-repo]}]
   (let [clean? (= "" (sh "git" "status" "--porcelain"))
         _ (when (not (or clean? (ends-with? version "SNAPSHOT")))
@@ -62,8 +61,7 @@
         (->> (spit pom-path)))))
 
 (defcli
-  {:fn sync-pom
-   :desc "Generates a new pom.xml in the current directory (overwrites any existing pom.xml)."
+  {:fn #'sync-pom
    :config ["lib.edn"]
    :cli-options [:group-id :artifact-id :version :github-repo]}
   cli-options)

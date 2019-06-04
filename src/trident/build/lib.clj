@@ -1,5 +1,5 @@
 (ns trident.build.lib
-  (:require [trident.build.util :refer [path]]))
+  (:require [trident.cli.util :refer [path]]))
 
 (def cli-options
   {:artifact-id   ["-a" "ID"]
@@ -13,5 +13,5 @@
                    :default "."]
    :remote-repo   ["-r" nil "Use remote repo instead of the local one"]})
 
-(defn- jar-file [{:keys [artifact-id version]}]
+(defn jar-file [{:keys [artifact-id version]}]
   (path "target" (str artifact-id "-" version ".jar")))
