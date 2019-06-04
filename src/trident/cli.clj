@@ -8,7 +8,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
-            [trident.cli.util :refer [maybe-slurp with-no-shutdown]]))
+            [trident.cli.util :refer [maybe-slurp with-no-shutdown with-dir]]))
 
 (defn- cli-desc [{:keys [cli short?] :or {short? true}}]
   (cond
@@ -208,5 +208,8 @@
 (defmacro defcli [cli & args]
   `(do
      (def ~'cli (reduce-cli ~cli ~@args))
+     (defn ~'-main* [dir# & args#]
+       (with-dir dir#
+         (dispatch args# ~'cli)))
      (defn  ~'-main [& args#]
-       (identity #_System/exit (dispatch args# ~'cli)))))
+       (System/exit (dispatch args# ~'cli)))))

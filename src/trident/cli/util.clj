@@ -86,7 +86,7 @@
              (subs (.getName p))
              (Integer/parseInt)
              (hash-map ::exit-code)
-             (ex-data "")
+             (ex-info "")
              (throw))))))
 
 (defn with-no-shutdown* [f]
