@@ -11,9 +11,7 @@
                         nrepl]}
   util          {:deps [org.clojure/core.async
                         orchestra
-                        com.taoensso/encore
-                        potemkin
-                        org.clojure/tools.deps.alpha]}
+                        com.taoensso/encore]}
   cli           {:local-deps [util]
                  :deps [me.raynes/fs
                         org.clojure/tools.cli
@@ -90,7 +88,6 @@
   org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}
   org.clojure/tools.namespace {:mvn/version "0.2.11"}
   org.immutant/web {:mvn/version "2.1.10"}
-  potemkin {:mvn/version "0.4.5"}
   re-com {:mvn/version "2.5.0"}
   reagent {:mvn/version "0.8.1"}
   ring-cors {:mvn/version "0.1.13"}

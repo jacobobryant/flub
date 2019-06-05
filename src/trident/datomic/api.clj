@@ -7,8 +7,6 @@
             [me.raynes.fs :as fs]
             [clojure.string :as str]))
 
-(u/pullall datomic.api)
-
 (declare ^:private storage)
 
 (defn storage-path! [path]

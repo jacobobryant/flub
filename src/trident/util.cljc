@@ -7,8 +7,7 @@
  #?@(:cljs [[goog.string :as gstring]
             [goog.string.format]
             [cljs.core.async :refer [<! put! chan close!]]]
-      :clj [[potemkin :refer [import-vars]]
-            [clojure.reflect :refer [reflect]]]))
+      :clj [[clojure.reflect :refer [reflect]]]))
   #?(:cljs (:require-macros trident.util)))
 
 (def pprint clojure.pprint/pprint)
@@ -24,11 +23,6 @@
 
 (defmacro capture [& xs]
   `(do ~@(for [x xs] `(def ~x ~x))))
-
-(defmacro pullall [& nses]
-  `(import-vars
-     ~@(for [n nses]
-         (into [n] (keys (ns-publics n))))))
 
 (defmacro cljs-pullall [nspace & syms]
   `(do ~@(for [s syms]
@@ -120,6 +114,7 @@
 (defn derive-config [m]
   (postwalk #(if (:derived (meta %)) (% m) %) m))
 
+; todo remove dependency on encore
 (defmacro defconfig [default]
   `(do
      (def ~'config (derive-config ~default))
