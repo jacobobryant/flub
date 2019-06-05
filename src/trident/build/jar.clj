@@ -1,6 +1,7 @@
 (ns trident.build.jar
   (:require [trident.cli :refer [make-cli expand-cli]]
             [trident.cli.util :refer [sh path]]
+            [me.raynes.fs :as fs]
             [mach.pack.alpha.skinny :as skinny]
             [trident.build.lib :refer [cli-options jar-file]]))
 
@@ -9,10 +10,9 @@
   [opts]
   ; TODO read artifact-id, version from pom
   (let [jar-file (jar-file opts)]
-    ; TODO use raynes
-    (sh "rm" "-f" jar-file)
-    (sh "mkdir" "-p" "target/extra/META-INF/")
-    (sh "cp" "pom.xml" "target/extra/META-INF")
+    (fs/delete jar-file)
+    (fs/mkdirs "target/extra/META-INF/")
+    (fs/copy "pom.xml" "target/extra/META-INF")
     (skinny/-main "--no-libs" "-e" (path "target/extra") "--project-path" jar-file)))
 
 (let [{:keys [cli main-fn]}

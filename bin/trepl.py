@@ -44,8 +44,14 @@ def bdecode(f, char=None):
     else:
         raise TypeError("unexpected type "+char+" in bencode data")
 
-def payload(code, _id):
-    return "d4:code{}:{}2:id{}:{}2:op4:evale".format(len(code), code, len(_id), _id)
+def bencode(x):
+    "Half-baked implementation of bencode that only covers the parts I need"
+    if isinstance(x, dict):
+        return "d{}e".format(''.join([bencode(y) for pair in sorted(x.items()) for y in pair]))
+    elif isinstance(x, str):
+        return "{}:{}".format(len(x), x)
+    else:
+        raise NotImplementedError("bencode not implemented for " + type(x))
 
 def receive(socket, char=None):
     f = socket.makefile()
@@ -63,10 +69,13 @@ def main(port, verbose, code):
         s.setblocking(1)
 
         selector = str(uuid.uuid4())
-        p = payload(code, selector)
+        payload = bencode({'code': code,
+                           'id': selector,
+                           'op': 'eval',
+                           'nrepl.middleware.caught/print?': 'true'})
         if verbose:
-            print("sending:", repr(p), "\n")
-        s.sendall(bytes(p, 'UTF-8'))
+            print("sending:", repr(payload), "\n")
+        s.sendall(bytes(payload, 'UTF-8'))
 
         while True:
             response = receive(s)
@@ -76,10 +85,8 @@ def main(port, verbose, code):
                 continue
             if 'out' in response:
                 print(response['out'], end="")
-            if 'err' in response:
-                print(response['err'], end="")
-            if 'ex' in response:
-                print("exception:", response['ex'])
+            if 'nrepl.middleware.caught/throwable' in response:
+                print(response['nrepl.middleware.caught/throwable'])
             if 'value' in response:
                 try:
                     ret = int(response['value'])
@@ -126,8 +133,11 @@ if __name__ == "__main__":
     eval_parser.add_argument('code', help="e.g. \"(println \\\"hey\\\")\". The expression's value will be "
             "used as this script's exit code (if it's an integer).")
     main_parser = subparsers.add_parser('main', usage="%(prog)s entry_point [arg1 [arg2 ...]]",
-            epilog="The trident.cli namespace must be available. This namespace is used to 1) run the function "
-            "in the current directory, 2) disable calls to `System/exit` and `shutdown-agents`.",
+            epilog="The trident.cli namespace must be available. This namespace is used to "
+            "1) run the function in the current directory, 2) disable calls to `System/exit` "
+            "and `shutdown-agents`. NOTE: the working directory will be changed for the whole "
+            "repl process while this command runs. If that's a problem, you may want to run a "
+            "separate repl to use with this command.",
             help="Run an existing function. Requires trident.cli namespace.")
     main_parser.add_argument('entry_point', help="The fully-qualified function name followed by any arguments, "
                         'e.g. `%(prog)s foo.core/bar hello 7`. All arguments will be passed as strings.')

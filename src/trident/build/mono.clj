@@ -2,7 +2,8 @@
   "Build tasks for working with projects defined by mono.edn"
   (:require [clojure.set :refer [union difference]]
             [trident.cli :refer [make-cli expand-cli]]
-            [trident.cli.util :refer [sh path fexists? sppit with-dir]]
+            [trident.cli.util :refer [path sppit with-dir rmrf]]
+            [me.raynes.fs :as fs]
             [clojure.string :as str]))
 
 (defn- get-deps [projects lib]
@@ -17,19 +18,6 @@
                            (difference local-deps deps)))))
         maven-deps (set (mapcat #(get-in projects [% :deps]) local-deps))]
     [local-deps maven-deps]))
-
-; TODO move to a resources dir or something
-(def ^:private build-contents
-"#!/bin/bash
-for f in ../../shared.sh project-build.sh; do
-  if [ -f $f ]; then
-    source $f
-  fi
-done
-set -e
-set -x
-\"$@\"
-")
 
 (defn mono
   "Creates project directories according to mono.edn.
@@ -47,20 +35,18 @@ set -x
           lib-edn (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
                          {:artifact-id (str lib)
                           :git-dir (path ".")})]
-      ; TODO use me.raynes.fs
-      (sh "rm" "-rf" dest)
-      (sh "mkdir" "-p" dest)
+      (rmrf dest)
+      (fs/mkdirs dest)
       (doseq [dep local-deps
               ext [".clj" ".cljs" ".cljc" "/"]
               :let [dep (str/replace (name dep) "-" "_")
-                    target (path "src" group-id (str dep ext))]
-              :when (fexists? target)]
-        (sh "ln" "-sr" target dest))
+                    basename (str dep ext)
+                    target (path "src" group-id basename)]
+              :when (fs/exists? target)]
+        (fs/sym-link (path dest basename) target))
       (with-dir (path "target" lib)
         (sppit "deps.edn" deps-edn)
-        (sppit "lib.edn" lib-edn)
-        (spit "build" build-contents)
-        (sh "chmod" "+x" "build")))))
+        (sppit "lib.edn" lib-edn)))))
 
 (let [{:keys [cli main-fn]}
       (make-cli

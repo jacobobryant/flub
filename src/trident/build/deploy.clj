@@ -18,20 +18,18 @@
 (def install (partial lib-task "install"))
 (def deploy (partial lib-task "deploy"))
 
-(defn- desc [x]
-  [x "" "The jar path is `target/<artifact-id>-<version>.jar`"])
+(let [subcommand (fn [f desc]
+                   {:fn f
+                    :desc [desc (str "Packages the jar first by default. The jar path is "
+                                     "`target/<artifact-id>-<version>.jar`.")]
+                    :config ["lib.edn"]
+                    :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]})
 
-(let [{:keys [cli main-fn]}
+      {:keys [cli main-fn]}
       (make-cli
         {:subcommands
-         {"install" {:fn install
-                     :desc (desc "Installs a library to the local maven repo.")
-                     :config ["lib.edn"]
-                     :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}
-          "deploy" {:fn deploy
-                    :desc (desc "Deploys a library to Clojars.")
-                    :config ["lib.edn"]
-                    :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}}}
+         {"install" (subcommand install "Installs a library to the local maven repo.")
+          "deploy" (subcommand deploy "Deploys a library to Clojars.")}}
         cli-options)]
   (def cli cli)
   (def -main main-fn))

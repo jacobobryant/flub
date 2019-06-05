@@ -31,6 +31,7 @@
                   "xml-replace expects even number of arguments after map, found odd number")))
        ret))))
 
+; todo handle missing options
 (defn sync-pom
   "Generates a new pom.xml in the current directory (overwrites any existing pom.xml)."
   [{:keys [group-id artifact-id version github-repo]}]

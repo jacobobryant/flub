@@ -2,13 +2,9 @@
   (:require [clojure.java.shell :as shell]
             [clojure.pprint :refer [pprint]]
             [clojure.string :refer [split join starts-with? trim]]
-            [me.raynes.fs :as raynes :refer [absolute]])
-  (:import jnr.posix.POSIXFactory))
-
-(defn fexists?
-  "Returns true if `path` exists on the filesystem"
-  [path]
-  (= 0 (:exit (shell/sh "test" "-e" path))))
+            [me.raynes.fs :as fs :refer [absolute]])
+  (:import jnr.posix.POSIXFactory
+           java.nio.file.LinkOption))
 
 (defn sh
   "Runs a shell command.
@@ -37,6 +33,11 @@
     (slurp f)
     (catch Exception e nil)))
 
+(defn rmrf
+  "Delete recursively without following symlinks, like `rm -rf`"
+  [f]
+  (fs/delete-dir f LinkOption/NOFOLLOW_LINKS))
+
 (let [posix (delay (POSIXFactory/getNativePOSIX))]
   (defn chdir
     "Uses the Java Native Runtime to **actually** change the current working directory.
@@ -54,7 +55,7 @@
         old-dir (System/getProperty "user.dir")
         _ (chdir new-dir)
         result (shell/with-sh-dir new-dir
-                 (raynes/with-cwd new-dir
+                 (fs/with-cwd new-dir
                    (try
                      {:success (f)}
                      (catch Exception e
