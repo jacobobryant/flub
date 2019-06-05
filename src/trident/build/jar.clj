@@ -12,7 +12,7 @@
   (let [jar-file (jar-file opts)]
     (fs/delete jar-file)
     (fs/mkdirs "target/extra/META-INF/")
-    (fs/copy "pom.xml" "target/extra/META-INF")
+    (fs/copy "pom.xml" "target/extra/META-INF/pom.xml")
     (skinny/-main "--no-libs" "-e" (path "target/extra") "--project-path" jar-file)))
 
 (let [{:keys [cli main-fn]}

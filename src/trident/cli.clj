@@ -24,16 +24,16 @@
   `clojure.tools.cli/parse-opts`. The other keys are described in [[dispatch]]."
   (let [subcommand-len (apply max 0 (map (comp count name) (keys subcommands)))]
     (u/text
-      true        [(str "Usage: <program> "
-                        (when summary "[options] ")
-                        (if subcommands
-                          "<subcommand> [<args>]"
-                          args-desc))
-                   ""]
-      true        (some-> (:desc cli) not-empty (concat [""]))
-      summary     ["Options:" summary ""]
-      config      [(str "Config files: " (str/join "," config)) ""]
-      subcommands ["Subcommands:"
+      true        (str "Usage: <program> "
+                       (when summary "[options] ")
+                       (if subcommands
+                         "<subcommand> [<args>]"
+                         args-desc))
+      true        (:desc cli)
+      summary     ["" "Options:" summary]
+      config      ["" (str "Config files: " (str/join "," config))]
+      subcommands [""
+                   "Subcommands:"
                    (u/text-columns
                      (for [[cmd-name cli] subcommands]
                        ["  " cmd-name "  " (or (first (:desc cli)) "")]))

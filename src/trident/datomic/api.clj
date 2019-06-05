@@ -76,5 +76,6 @@
             (update-info info result)))
         {:db (d/db conn)}
         (line-seq rdr)))
-    (u/move tmp-storage storage)
+    (fs/delete storage)
+    (fs/rename tmp-storage storage)
     conn))

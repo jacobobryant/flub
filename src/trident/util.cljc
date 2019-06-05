@@ -1,4 +1,6 @@
 (ns trident.util
+  "Utility library. Docstrings are omitted for simple functions; read the source
+  to see what they do."
   (:require [clojure.walk :refer [postwalk]]
             [clojure.pprint]
             [clojure.spec.alpha :as s]
@@ -12,10 +14,6 @@
 
 (def pprint clojure.pprint/pprint)
 
-(defn map-from
-  [f xs]
-  (into {} (for [x xs] [x (f x)])))
-
 (defn pred-> [x f g]
   (if (f x) (g x) x))
 
@@ -24,7 +22,15 @@
 (defmacro capture [& xs]
   `(do ~@(for [x xs] `(def ~x ~x))))
 
-(defmacro cljs-pullall [nspace & syms]
+(defmacro cljs-import-vars
+  "Like `potemkin/import-vars` but supports importing cljs-only functions.
+
+  Example:
+  ```
+  (cljs-import-vars my.namespace.core
+                    foo bar baz)
+  ```"
+  [nspace & syms]
   `(do ~@(for [s syms]
            `(def ~s ~(symbol (str nspace) (str s))))))
 
@@ -32,23 +38,16 @@
   `(vec (for ~@body)))
 
 (defmacro condas->
-  "Combination of as-> and cond->."
+  "Combination of `cond->` and `as->`."
   [expr name & clauses]
   (assert (even? (count clauses)))
   `(as-> ~expr ~name
      ~@(map (fn [[test step]] `(if ~test ~step ~name))
             (partition 2 clauses))))
 
-; todo move instead of copy
-(defn move [src dest]
-  (spit dest (slurp src)))
-
-(defn manhattand [a b]
-  (->> (map - a b)
-       (map #(Math/abs %))
-       (apply +)))
-
-(defmacro js<! [form]
+(defmacro js<!
+  "Like `<!` but for js promises. See [[to-chan]]."
+  [form]
   `(cljs.core.async/<! (to-chan ~form)))
 
 (defmacro for-every? [& forms]
@@ -60,18 +59,37 @@
 (defmacro forcat [& forms]
   `(apply concat (for ~@forms)))
 
-(defn loadx [sym]
+(defn load-var
+  "Dynamically loads a var.
+
+  `sym`: a fully-qualified var symbol."
+  [sym]
   (require (symbol (namespace sym)))
   (let [f (if-let [f (resolve sym)]
             f
             (throw (ex-info sym " is not on the classpath.")))]
     @f))
 
-(defn loadf [sym]
-  (fn [& args]
-    (apply (loadx sym) args)))
+(defn loadf
+  "Returns a function that dynamically loads and calls the specified function.
 
-(defmacro load-fns [& forms]
+  `sym`: a fully-qualified function symbol."
+  [sym]
+  (fn [& args]
+    (apply (load-var sym) args)))
+
+(defmacro load-fns
+  "Defines a bunch of \"dynamic functions\" (see [[loadf]]).
+
+  Example:
+  ```
+  (load-fns
+    foo my.lib/foo
+    bar my.lib/bar
+    baz your.lib/baz)
+  (foo) ; same as (do (require 'my.lib) (my.lib/foo))
+  ```"
+  [& forms]
   (assert (even? (count forms)))
   `(do ~@(for [[sym fn-sym] (partition 2 forms)]
            `(def ~sym (#'loadf (quote ~fn-sym))))))
@@ -89,7 +107,37 @@
           arglist arglists]
       [-name (count arglist)])))
 
-(defmacro inherit [child-name [parent-instance :as fields] & overrides]
+(defmacro inherit
+  "Like `deftype` but with default function implementations.
+
+  The first field is the \"parent\": for any protocol functions you don't define,
+  the function will be called again with the parent as the first argument instead
+  of the current object.
+
+  Example:
+  ```
+  (defprotocol P
+    (foo [this])
+    (bar [this]))
+
+  (deftype Parent []
+    P
+    (foo [_] \"parent foo\")
+    (bar [_] \"parent bar\"))
+
+  (inherit Child [parent]
+    P
+    (foo [_] \"child foo\"))
+
+  (def parent (Parent.))
+  (def child (Child. parent))
+
+  (foo child)
+  => \"child foo\"
+  (bar child)
+  => \"parent bar\"
+  ```"
+  [child-name [parent-instance :as fields] & overrides]
   (s/assert ::overrides overrides)
   `(deftype ~child-name ~fields
      ~@(forcat [{:keys [interface fns]} (s/conform ::overrides overrides)]
@@ -111,11 +159,35 @@
                             ~parent-instance
                             ~@(rest arglist))))))]))))
 
-(defn derive-config [m]
+(defn derive-config
+  "Replaces any `^:derived` values in `m`. See [[defconfig]]."
+  [m]
   (postwalk #(if (:derived (meta %)) (% m) %) m))
 
-; todo remove dependency on encore
-(defmacro defconfig [default]
+(defmacro defconfig
+  "Defines `config` and `init-config!` vars.
+
+  Example:
+  ```
+  (defconfig
+    {:first-name \"John\"
+     :last-name  \"Doe\"
+     :full-name ^:derived #(str (:first-name %) \" \" (:last-name %))})
+
+  config
+  => {:first-name \"John\" :last-name  \"Doe\" :full-name \"John Doe\"}
+
+  (init-config! {:first-name \"Jane\"})
+  config
+  => {:first-name \"Jane\" :last-name  \"Doe\" :full-name \"Jane Doe\"}
+  ```
+  `default` is a map. Any values with a truthy `:derived` metadata value must
+  be single-argument functions. These functions will be replaced with their return
+  values, with the config map as the argument.
+
+  `init-config!` takes any number of maps and merges them onto the provided config
+  map using `taoensso.encore/nested-merge`, deriving values afterward."
+  [default]
   `(do
      (def ~'config (derive-config ~default))
      (defn ~'init-config! [& ms#]
@@ -123,16 +195,42 @@
              c# (derive-config c#)]
          (def ~'config c#)))))
 
-(defn text* [lines]
-  (str/join \newline
-            (pred-> (remove nil? (flatten lines))
-                    (comp empty? last) butlast)))
+(defn ^:no-doc text* [lines]
+  (str/join \newline (remove nil? (flatten lines))))
 
-(defmacro text [& forms]
+(defmacro text
+  "Generates a string from pairs of conditions and lines of text.
+
+  The right-hand side values will be flattened, so you can give strings,
+  collections of strings, or nested collections of strings. `nil`s are
+  removed.
+
+  Example:
+  ```
+  (println (text
+             true  [\"foo\" nil \"bar\"]
+             false \"baz\"
+             true  \"quux\"))
+  foo
+  bar
+  quux
+  ```"
+  [& forms]
   `(text* [~@(for [[condition lines] (partition 2 forms)]
                `(when ~condition ~lines))]))
 
-(defn text-columns [rows]
+(defn text-columns
+  "Formats rows of text into columns.
+
+  Example:
+  ```
+  (doseq [row (text-columns [[\"hellooooooooo \" \"there\"]
+                             [\"foo \" \"bar\"]])]
+    (println row))
+  hellooooooooo there
+  foo           bar
+  ```"
+  [rows]
   (let [lens (apply map (fn [& column-parts]
                           (apply max (map count column-parts)))
                     rows)
@@ -143,7 +241,10 @@
 
 #?(:cljs (do
 
-(defn to-chan [p]
+(defn to-chan
+  "Converts a js promise to a channel.
+  If the promise throws an error, logs to the console and closes the channel."
+  [p]
   (let [c (chan)]
     (.. p (then #(put! c %))
         (catch #(do
@@ -151,7 +252,8 @@
                   (close! c))))
     c))
 
-(def format gstring/format)
+(def ^{:doc "alias for `goog.string.format`"}
+  format gstring/format)
 
 ))
 
@@ -159,67 +261,6 @@
                                :clj java.util.Date))
 (defn instant? [x]
   (= (type x) instant-type))
-
-(defn indexed [xs]
-  (map-indexed vector xs))
-
-(defn dissoc-by [m f]
-  (into {} (remove (comp f second) m)))
-
-(defn map-inverse [m]
-  (reduce
-    (fn [inverse [k v]]
-      (update inverse v
-              #(if (nil? %)
-                 #{k}
-                 (conj % k))))
-    {}
-    m))
-
-(defn conj-some [coll x]
-  (cond-> coll
-    x (conj x)))
-
-(defn assoc-some [m k v]
-  (cond-> m (some? v) (assoc k v)))
-
-(defn split-by [f coll]
-  (reduce
-    #(update %1 (if (f %2) 0 1) conj %2)
-    [nil nil]
-    coll))
-
-(defn deep-merge [& ms]
-  (apply
-    merge-with
-    (fn [x y]
-      (cond (map? y) (deep-merge x y)
-            :else y))
-    ms))
-
-(defn remove-nil-empty [m]
-  (into {} (remove (fn [[k v]]
-                     (or (nil? v)
-                         (and (coll? v) (empty? v)))) m)))
-
-(defn remove-nils [m]
-  (into {} (remove (comp nil? second) m)))
-
-(defn deep-merge-some [& ms]
-  (postwalk (fn [x]
-              (if (map? x)
-                (remove-nil-empty x)
-                x))
-            (apply deep-merge ms)))
-
-(defn merge-some [& ms]
-  (reduce
-    (fn [m m']
-      (let [[some-keys nil-keys] (split-by (comp some? m') (keys m'))]
-        (as-> m x
-          (merge x (select-keys m' some-keys))
-          (apply dissoc x nil-keys))))
-    ms))
 
 #?(:cljs
 (def char->int (into {} (map #(vector (char %) %) (range 256))))
@@ -237,12 +278,13 @@
 (defn map-kv [f xs]
   (into {} (map (fn [[k v]] (f k v)) xs)))
 
-(defn doclines [_var]
+(defn doclines
+  "Returns the docstring of a var as a collection of lines, removing indentation."
+  [_var]
   (when-some [_doc (:doc (meta _var))]
     (let [lines (str/split _doc #"\n")
           indent (->> (rest lines)
                       (map #(count (re-find #"^ *" %)))
                       (apply min ##Inf))]
-      (capture lines indent)
       (map-indexed #(cond-> %2 (not (zero? %1)) (subs indent))
                    lines))))

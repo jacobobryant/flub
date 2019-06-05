@@ -10,8 +10,8 @@
   (:require-macros [trident.util :as u]
                    [cljs.core.async.macros :refer [go]]))
 
-(u/cljs-pullall datascript.core
-                q pull pull-many create-conn db)
+(u/cljs-import-vars datascript.core
+                    q pull pull-many create-conn db)
 
 (def ^:private registry (atom []))
 
