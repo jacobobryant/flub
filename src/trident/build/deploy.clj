@@ -1,7 +1,7 @@
 (ns trident.build.deploy
   "Miscellaneous build tasks.
   See `trident.build` for usage."
-  (:require [trident.cli :refer [defcli]]
+  (:require [trident.cli :refer [make-cli]]
             [trident.build.pom :refer [sync-pom]]
             [trident.build.jar :refer [jar]]
             [trident.build.lib :refer [cli-options jar-file]]
@@ -21,14 +21,17 @@
 (defn- desc [x]
   [x "" "The jar path is `target/<artifact-id>-<version>.jar`"])
 
-(defcli
-  {:subcommands
-   {"install" {:fn install
-               :desc (desc "Installs a library to the local maven repo.")
-               :config ["lib.edn"]
-               :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}
-    "deploy" {:fn deploy
-              :desc (desc "Deploys a library to Clojars.")
-              :config ["lib.edn"]
-              :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}}}
-  cli-options)
+(let [{:keys [cli main-fn]}
+      (make-cli
+        {:subcommands
+         {"install" {:fn install
+                     :desc (desc "Installs a library to the local maven repo.")
+                     :config ["lib.edn"]
+                     :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}
+          "deploy" {:fn deploy
+                    :desc (desc "Deploys a library to Clojars.")
+                    :config ["lib.edn"]
+                    :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}}}
+        cli-options)]
+  (def cli cli)
+  (def -main main-fn))

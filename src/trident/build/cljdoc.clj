@@ -1,6 +1,6 @@
 (ns trident.build.cljdoc
   (:require [trident.cli.util :refer [sh path]]
-            [trident.cli :refer [defcli]]
+            [trident.cli :refer [make-cli]]
             [trident.build.lib :refer [cli-options]]))
 
 (defn cljdoc
@@ -12,10 +12,14 @@
                true (concat [:dir cljdoc-dir]))]
     (print (apply sh args))))
 
-(defcli
-  {:fn #'cljdoc
-   :config ["lib.edn"]
-   :cli-options [:group-id :artifact-id :version :cljdoc-dir
-                 :git-dir :github-repo :remote-repo]
-   :append {:github-repo ". Used when --remote-repo is set."}}
-  cli-options)
+(let [cli-options (update-in cli-options [:github-repo 2]
+                             str ". Used when --remote-repo is set.")
+      {:keys [cli main-fn]}
+      (make-cli
+        {:fn #'cljdoc
+         :config ["lib.edn"]
+         :cli-options [:group-id :artifact-id :version :cljdoc-dir
+                       :git-dir :github-repo :remote-repo]}
+        cli-options)]
+  (def cli cli)
+  (def -main main-fn))

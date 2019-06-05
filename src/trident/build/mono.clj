@@ -1,7 +1,7 @@
 (ns trident.build.mono
   "Build tasks for working with projects defined by mono.edn"
   (:require [clojure.set :refer [union difference]]
-            [trident.cli :refer [defcli reduce-cli]]
+            [trident.cli :refer [make-cli expand-cli]]
             [trident.cli.util :refer [sh path fexists? sppit with-dir]]
             [clojure.string :as str]))
 
@@ -62,10 +62,13 @@ set -x
         (spit "build" build-contents)
         (sh "chmod" "+x" "build")))))
 
-(defcli
-  {:fn #'mono
-   :args-desc "[<project(s)>]"
-   :config ["mono.edn"]})
+(let [{:keys [cli main-fn]}
+      (make-cli
+        {:fn #'mono
+         :args-desc "[<project(s)>]"
+         :config ["mono.edn"]})]
+  (def cli cli)
+  (def -main main-fn))
 
 (defn- wrap-dir* [{:keys [with-projects all-projects projects]} subcommand]
   (if-some [with-projects (if all-projects (keys projects) with-projects)]
@@ -82,7 +85,7 @@ set -x
                                  " mono.edn). Overrides --with-projects.")]})
 
 (defn wrap-dir [subcommands]
-  (reduce-cli
+  (expand-cli
     {:wrap wrap-dir*
      :config ["mono.edn"]
      :cli-options [:with-projects :all-projects]

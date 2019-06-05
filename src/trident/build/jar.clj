@@ -1,5 +1,5 @@
 (ns trident.build.jar
-  (:require [trident.cli :refer [defcli reduce-cli]]
+  (:require [trident.cli :refer [make-cli expand-cli]]
             [trident.cli.util :refer [sh path]]
             [mach.pack.alpha.skinny :as skinny]
             [trident.build.lib :refer [cli-options jar-file]]))
@@ -15,8 +15,11 @@
     (sh "cp" "pom.xml" "target/extra/META-INF")
     (skinny/-main "--no-libs" "-e" (path "target/extra") "--project-path" jar-file)))
 
-(defcli
-  {:fn #'jar
-   :config ["lib.edn"]
-   :cli-options [:artifact-id :version]}
-  cli-options)
+(let [{:keys [cli main-fn]}
+      (make-cli
+        {:fn #'jar
+         :config ["lib.edn"]
+         :cli-options [:artifact-id :version]}
+        cli-options)]
+  (def cli cli)
+  (def -main main-fn))

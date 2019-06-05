@@ -170,42 +170,36 @@
                 (apply f opts args)
                 (dispatch-subcommand args subcommands #(wrap opts %))))))))))
 
-(defn- reduce-options [{option-keys :cli-options :as cli} options]
+(defn- expand-options [{option-keys :cli-options :as cli} options]
   (let [options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) " " %))])
-                          (select-keys options option-keys))
-        options (if-not (contains? cli :append)
-                  options
-                  (reduce-kv
-                    (fn [options opt addendum]
-                      (update-in options [opt 2] str addendum))
-                    options
-                    (:append cli)))]
+                          (select-keys options option-keys))]
     (update cli :cli-options (fn [x] (map #(u/pred-> % keyword? options) x)))))
 
 (def ^:private config-opt
   [nil "--config EDN" "Config data to use as the last config file. Overrides CLI options."])
 
-(defn reduce-cli
+(defn expand-cli
   ([cli options]
-   (if (::reduced (meta cli))
+   (if (::expanded (meta cli))
      cli
      (u/condas-> cli x
        (var? x)                        {:fn x}
        (and (var? (:fn x))
             (not (contains? x :desc))) (assoc x :desc (u/doclines (:fn x)))
        (var? (:fn x))                  (update x :fn deref)
-       (contains? x :cli-options)      (reduce-options x options)
+       (contains? x :cli-options)      (expand-options x options)
        (contains? x :config)           (update x :cli-options #(conj (vec %) config-opt))
        (contains? x :cli-options)      (update x :cli-options #(conj (vec %) ["-h" "--help"]))
-       (contains? x :subcommands)      (->> #(vector %1 (reduce-cli %2 options))
+       (contains? x :subcommands)      (->> #(vector %1 (expand-cli %2 options))
                                             (partial u/map-kv)
                                             (update x :subcommands))
-       true                            (with-meta x {::reduced true}))))
-  ([cli] (reduce-cli cli {})))
+       true                            (with-meta x {::expanded true}))))
+  ([cli] (expand-cli cli {})))
 
-; auto add docstring to fn based on cli? auto spec stuff (or derive stuff from spec)?
-(defmacro defcli [cli & args]
-  `(do
-     (def ~'cli (reduce-cli ~cli ~@args))
-     (defn  ~'-main [& args#]
-       (System/exit (dispatch args# ~'cli)))))
+(defn main-fn [cli]
+  (fn [& args] (System/exit (dispatch args cli))))
+
+(defn make-cli [cli & args]
+  (let [cli (apply expand-cli cli args)]
+    {:cli cli
+     :main-fn (main-fn cli)}))

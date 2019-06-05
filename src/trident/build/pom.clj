@@ -1,7 +1,7 @@
 (ns trident.build.pom
   (:require [clojure.zip :as zip]
             [clojure.data.zip.xml :as zipx]
-            [trident.cli :refer [defcli]]
+            [trident.cli :refer [make-cli]]
             [trident.cli.util :refer [path sh]]
             [trident.build.lib :refer [cli-options]]
             [clojure.data.xml :as xml]
@@ -60,8 +60,10 @@
         xml/indent-str
         (->> (spit pom-path)))))
 
-(defcli
-  {:fn #'sync-pom
-   :config ["lib.edn"]
-   :cli-options [:group-id :artifact-id :version :github-repo]}
-  cli-options)
+(let [{:keys [cli main-fn]}
+      (make-cli {:fn #'sync-pom
+                 :config ["lib.edn"]
+                 :cli-options [:group-id :artifact-id :version :github-repo]}
+                cli-options)]
+  (def cli cli)
+  (def -main main-fn))
