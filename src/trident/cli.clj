@@ -190,8 +190,7 @@
    (if (::reduced (meta cli))
      cli
      (u/condas-> cli x
-       (var? x)                        {:fn @x
-                                        :desc (u/doclines x)}
+       (var? x)                        {:fn x}
        (and (var? (:fn x))
             (not (contains? x :desc))) (assoc x :desc (u/doclines (:fn x)))
        (var? (:fn x))                  (update x :fn deref)
@@ -208,8 +207,5 @@
 (defmacro defcli [cli & args]
   `(do
      (def ~'cli (reduce-cli ~cli ~@args))
-     (defn ~'-main* [dir# & args#]
-       (with-dir dir#
-         (dispatch args# ~'cli)))
      (defn  ~'-main [& args#]
        (System/exit (dispatch args# ~'cli)))))

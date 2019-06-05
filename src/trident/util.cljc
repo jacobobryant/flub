@@ -242,11 +242,12 @@
 (defn map-kv [f xs]
   (into {} (map (fn [[k v]] (f k v)) xs)))
 
-(defn doclines [-var]
-  (when-some [-doc (:doc (meta -var))]
-    (let [lines (str/split -doc #"\n")
+(defn doclines [_var]
+  (when-some [_doc (:doc (meta _var))]
+    (let [lines (str/split _doc #"\n")
           indent (->> (rest lines)
                       (map #(count (re-find #"^ *" %)))
-                      (apply min 0))]
+                      (apply min ##Inf))]
+      (capture lines indent)
       (map-indexed #(cond-> %2 (not (zero? %1)) (subs indent))
                    lines))))

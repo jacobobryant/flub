@@ -1,0 +1,2 @@
+#!/bin/bash
+clj -Adev -e "(do (require 'trident.repl) (trident.repl/init))" -r

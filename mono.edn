@@ -2,7 +2,8 @@
  :group-id "trident"
  :github-repo "jacobobryant/trident"
  :cljdoc-dir "/home/arch/dev/cljdoc/"
- :aliases {:dev {:extra-deps {trident-repl {:local/root "../repl"}}}}
+ :aliases {:dev {:extra-deps {trident-repl {:local/root "../repl"}
+                              trident-build {:local/root "../build"}}}}
  :projects
  {repl          {:deps [org.clojure/tools.namespace
                         mount
