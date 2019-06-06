@@ -27,7 +27,7 @@
   (spit file (with-out-str (pprint x))))
 
 (defn maybe-slurp
-  "Attempts to slurp `f`, returns nil on failure"
+  "Attempts to slurp `f`, returning nil on failure"
   [f]
   (try
     (slurp f)
@@ -78,7 +78,7 @@
   [dir & forms]
   `(with-dir* ~dir #(do ~@forms)))
 
-(def ^:private no-exit-sm
+(def ^:no-doc no-exit-sm
   (proxy [SecurityManager] []
     (checkPermission
       [^java.security.Permission p]
@@ -90,7 +90,9 @@
              (ex-info "")
              (throw))))))
 
-(defn with-no-shutdown* [f]
+(defn with-no-shutdown*
+  "Calls `f`, preventing calls to `System/exit` or `shutdown-agents`."
+  [f]
   (let [old-sm (System/getSecurityManager)
         _ (System/setSecurityManager no-exit-sm)
         [success? result] (with-redefs [shutdown-agents (constantly nil)]
@@ -102,5 +104,7 @@
       (or (::exit-code (ex-data result))
           (throw result)))))
 
-(defmacro with-no-shutdown [& forms]
+(defmacro with-no-shutdown
+  "Runs forms, preventing calls to `System/exit` or `shutdown-agents`."
+  [& forms]
   `(with-no-shutdown* (fn [] ~@forms)))

@@ -257,8 +257,8 @@
 
 ))
 
-(def ^:private instant-type #?(:cljs (type #inst "0001-01-01")
-                               :clj java.util.Date))
+(def ^:no-doc instant-type #?(:cljs (type #inst "0001-01-01")
+                              :clj java.util.Date))
 (defn instant? [x]
   (= (type x) instant-type))
 

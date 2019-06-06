@@ -1,7 +1,7 @@
 (ns trident.build.mono
   "Build tasks for working with projects defined by mono.edn"
   (:require [clojure.set :refer [union difference]]
-            [trident.cli :refer [make-cli expand-cli]]
+            [trident.cli :refer [make-cli expand-cli dispatch]]
             [trident.cli.util :refer [path sppit with-dir rmrf]]
             [me.raynes.fs :as fs]
             [clojure.string :as str]))
@@ -51,17 +51,19 @@
 (let [{:keys [cli main-fn]}
       (make-cli
         {:fn #'mono
-         :args-desc "[<project(s)>]"
+         :cli-options nil
+         :args-spec "[<project(s)>]"
          :config ["mono.edn"]})]
   (def cli cli)
   (def -main main-fn))
 
-(defn- wrap-dir* [{:keys [with-projects all-projects projects]} subcommand]
-  (if-some [with-projects (if all-projects (keys projects) with-projects)]
-    (doseq [p with-projects]
-      (with-dir (path "target" p)
-        (subcommand)))
-    (subcommand)))
+(defn- wrap-dir* [subcommands {:keys [with-projects all-projects projects]} & args]
+  (let [subcommand #(dispatch args {:subcommands subcommands})]
+    (if-some [with-projects (if all-projects (keys projects) with-projects)]
+      (doseq [p with-projects]
+        (with-dir (path "target" p)
+          (subcommand)))
+      (subcommand))))
 
 (def cli-options
   {:with-projects ["-w" "PROJECTS" (str "Colon-separated list of projects. The subcommand will "
@@ -72,7 +74,7 @@
 
 (defn wrap-dir [subcommands]
   (expand-cli
-    {:wrap wrap-dir*
+    {:fn (partial wrap-dir* subcommands)
      :config ["mono.edn"]
      :cli-options [:with-projects :all-projects]
      :subcommands subcommands}
