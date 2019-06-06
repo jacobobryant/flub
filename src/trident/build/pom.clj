@@ -61,10 +61,10 @@
         xml/indent-str
         (->> (spit pom-path)))))
 
-(let [{:keys [cli main-fn]}
+(let [{:keys [cli main-fn help]}
       (make-cli {:fn #'sync-pom
                  :config ["lib.edn"]
                  :cli-options [:group-id :artifact-id :version :github-repo]}
                 cli-options)]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))

@@ -1,4 +1,5 @@
 (ns trident.build
+  "A collection of build tasks defined using `trident.cli`."
   (:require [trident.cli :refer [make-cli]]
             [trident.build.mono :as mono]
             [trident.build.cljdoc :as cljdoc]
@@ -6,7 +7,8 @@
             [trident.build.jar :as jar]
             [trident.build.deploy :as deploy]))
 
-(let [{:keys [cli main-fn]}
+
+(let [{:keys [cli main-fn help]}
       (make-cli
         (mono/wrap-dir
           (merge
@@ -16,4 +18,4 @@
              "jar" jar/cli}
             (:subcommands deploy/cli))))]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))

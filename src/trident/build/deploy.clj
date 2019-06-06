@@ -1,6 +1,4 @@
 (ns trident.build.deploy
-  "Miscellaneous build tasks.
-  See `trident.build` for usage."
   (:require [trident.cli :refer [make-cli]]
             [trident.build.pom :refer [sync-pom]]
             [trident.build.jar :refer [jar]]
@@ -25,11 +23,11 @@
                     :config ["lib.edn"]
                     :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]})
 
-      {:keys [cli main-fn]}
+      {:keys [cli main-fn help]}
       (make-cli
         {:subcommands
          {"install" (subcommand install "Installs a library to the local maven repo.")
           "deploy" (subcommand deploy "Deploys a library to Clojars.")}}
         cli-options)]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))

@@ -15,7 +15,7 @@
 
 (let [cli-options (update-in cli-options [:github-repo 2]
                              str ". Used when --remote-repo is set.")
-      {:keys [cli main-fn]}
+      {:keys [cli main-fn help]}
       (make-cli
         {:fn #'cljdoc
          :config ["lib.edn"]
@@ -23,4 +23,4 @@
                        :git-dir :github-repo :remote-repo]}
         cli-options)]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))

@@ -15,11 +15,11 @@
     (fs/copy "pom.xml" "target/extra/META-INF/pom.xml")
     (skinny/-main "--no-libs" "-e" (path "target/extra") "--project-path" jar-file)))
 
-(let [{:keys [cli main-fn]}
+(let [{:keys [cli main-fn help]}
       (make-cli
         {:fn #'jar
          :config ["lib.edn"]
          :cli-options [:artifact-id :version]}
         cli-options)]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))

@@ -48,14 +48,14 @@
         (sppit "deps.edn" deps-edn)
         (sppit "lib.edn" lib-edn)))))
 
-(let [{:keys [cli main-fn]}
+(let [{:keys [cli main-fn help]}
       (make-cli
         {:fn #'mono
          :cli-options nil
          :args-spec "[<project(s)>]"
          :config ["mono.edn"]})]
   (def cli cli)
-  (def -main main-fn))
+  (def ^{:doc help} -main main-fn))
 
 (defn- wrap-dir* [subcommands {:keys [with-projects all-projects projects]} & args]
   (let [subcommand #(dispatch args {:subcommands subcommands})]

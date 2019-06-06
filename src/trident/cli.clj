@@ -98,7 +98,7 @@
               cli (get subcommands cmd)]
           (if (some? cli)
             (dispatch args cli)
-            (do (println "Command not recognized:" cmd) 1)))))))
+            (do (println "Subcommand not recognized:" cmd) 1)))))))
 
 (defn ^:no-doc expand-options [{option-keys :cli-options :as cli} options]
   (let [options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) (some->> % (str " "))))])
@@ -198,7 +198,7 @@
                                            (expand-options options)
                                            (add-opt edn-opt))
        (or (contains? x :cli-options)
-           (not (contains? x :fn)))    (add-opt help-opt)
+           (not (contains? x :fn)))    (add-opt x help-opt)
        (contains? x :subcommands)      (->> #(vector %1 (expand-cli %2 options))
                                             (partial u/map-kv)
                                             (update x :subcommands))
@@ -211,7 +211,7 @@
   (fn [& args] (System/exit (dispatch args cli))))
 
 (defn make-cli
-  "Returns a map with the keys `:cli` and `:main-fn`.
+  "Returns a map with the keys `:cli`, `:main-fn` and `:help`.
 
   `cli`: an expanded form of `compact-cli` and `options`, suitable for passing to
   [[dispatch]]. See [[expand-cli]] for the format of `compact-cli` and `options`,
@@ -220,6 +220,9 @@
   `main-fn`: a function suitable for binding to `-main`. It will call through to
   the function specified by `cli`, afterwards calling `System/exit` with the
   function's return value (if it's an integer) as the exit code.
+
+  `help`: the auto-generated `--help` output for this task. Good for including in
+  `-main`'s docstring.
 
   Example:
   ```
@@ -233,8 +236,8 @@
 
   (def options {:capitalize [\"-c\" nil \"Capitalize the name\"]})
 
-  (let [{:keys [cli main-fn]} (make-cli compact-cli options)]
-    (def -main main-fn)
+  (let [{:keys [cli main-fn help]} (make-cli compact-cli options)]
+    (def ^{:doc help} -main main-fn)
     ; `cli` is exposed so it can be reused if needed.
     (def cli cli))
 
@@ -255,7 +258,12 @@
   0
   ```"
   ([compact-cli options]
-   (let [cli (expand-cli compact-cli options)]
+   (let [cli (expand-cli compact-cli options)
+         help (when (some #(= (get % 1) "--help") (:cli-options cli))
+                (str "```\n"
+                     (with-out-str (dispatch ["--help"] cli))
+                     "```"))]
      {:cli cli
-      :main-fn (main-fn cli)}))
+      :main-fn (main-fn cli)
+      :help help}))
   ([compact-cli] (make-cli compact-cli {})))
