@@ -16,18 +16,30 @@
 (def install (partial lib-task "install"))
 (def deploy (partial lib-task "deploy"))
 
-(let [subcommand (fn [f desc]
-                   {:fn f
-                    :desc [desc (str "Packages the jar first by default. The jar path is "
-                                     "`target/<artifact-id>-<version>.jar`.")]
-                    :config ["lib.edn"]
-                    :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]})
+(let [subcommand
+      (fn [f cmd desc]
+        (make-cli
+          {:fn f
+           :prog (str "clj -m trident.build.deploy " cmd)
+           :desc [desc (str "Packages the jar first by default. The jar path is "
+                            "`target/<artifact-id>-<version>.jar`.")]
+           :config ["lib.edn"]
+           :cli-options [:group-id :artifact-id :version :github-repo :skip-jar]}
+          cli-options))
+
+      {install-cli :cli install-help :help}
+      (subcommand install "install" "Installs a library to the local maven repo.")
+
+      {deploy-cli :cli deploy-help :help}
+      (subcommand install "deploy"
+                  ["Deploys a library to Clojars."
+                   (str "The environment variables `CLOJARS_USERNAME` and "
+                        "`CLOJARS_PASSWORD` must be set.")])
 
       {:keys [cli main-fn help]}
-      (make-cli
-        {:subcommands
-         {"install" (subcommand install "Installs a library to the local maven repo.")
-          "deploy" (subcommand deploy "Deploys a library to Clojars.")}}
-        cli-options)]
+      (make-cli {:prog "clj -m trident.build.deploy"
+                 :subcommands {"install" install-cli "deploy" deploy-cli}})]
   (def cli cli)
-  (def ^{:doc help} -main main-fn))
+  (def ^{:doc help} -main main-fn)
+  (alter-meta! #'install assoc :doc install-help)
+  (alter-meta! #'deploy assoc :doc deploy-help))

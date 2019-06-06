@@ -20,7 +20,8 @@
         {:fn #'cljdoc
          :config ["lib.edn"]
          :cli-options [:group-id :artifact-id :version :cljdoc-dir
-                       :git-dir :github-repo :remote-repo]}
+                       :git-dir :github-repo :remote-repo]
+         :prog "clj -m trident.build.cljdoc"}
         cli-options)]
   (def cli cli)
   (def ^{:doc help} -main main-fn))

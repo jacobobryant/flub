@@ -10,12 +10,14 @@
 
 (let [{:keys [cli main-fn help]}
       (make-cli
-        (mono/wrap-dir
-          (merge
-            {"mono" mono/cli
-             "doc" cljdoc/cli
-             "pom" pom/cli
-             "jar" jar/cli}
-            (:subcommands deploy/cli))))]
+        (assoc
+          (mono/wrap-dir
+            (merge
+              {"mono" mono/cli
+               "doc" cljdoc/cli
+               "pom" pom/cli
+               "jar" jar/cli}
+              (:subcommands deploy/cli)))
+          :prog "clj -m trident.build"))]
   (def cli cli)
   (def ^{:doc help} -main main-fn))

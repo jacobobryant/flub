@@ -59,7 +59,7 @@
                  :deps [org.immutant/web
                         nrepl
                         org.clojure/tools.namespace]}
-  docs          {:local-deps [datomic frontend datomic-cloud firebase repl build]}}
+  docs          {:local-deps [repl build]}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
  :managed-deps
  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}

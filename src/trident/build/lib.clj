@@ -1,4 +1,4 @@
-(ns trident.build.lib
+(ns ^:no-doc trident.build.lib
   (:require [trident.cli.util :refer [path]]))
 
 (def cli-options

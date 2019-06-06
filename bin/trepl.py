@@ -137,7 +137,7 @@ if __name__ == "__main__":
             "1) run the function in the current directory, 2) disable calls to `System/exit` "
             "and `shutdown-agents`. NOTE: the working directory will be changed for the whole "
             "repl process while this command runs. If that's a problem, you may want to run a "
-            "separate repl to use with this command.",
+            "dedicated repl for use with this command.",
             help="Run an existing function. Requires trident.cli namespace.")
     main_parser.add_argument('entry_point', help="The fully-qualified function name followed by any arguments, "
                         'e.g. `%(prog)s foo.core/bar hello 7`. All arguments will be passed as strings.')

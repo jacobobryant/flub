@@ -1,5 +1,5 @@
 ```clojure
-[trident "0.1.0"]
+{trident/<artifact> {:mvn/version "0.1.3"}}
 ```
 
 # Trident
@@ -7,125 +7,65 @@
 > Because I had to call it something
 
 Trident is my personal experiment in creating a highly-abstracted web
-application framework for use with Datomic Cloud.
+application framework for use with Datomic Cloud. But it's also just a
+collection of libraries, containing anything I happen to abstract out of
+projects I'm working on.
 
-## Philosophy
+My top-level goal with Trident is to maximize code reuse (especially my own, but
+hopefully for others as well). This has two parts:
 
-We all know that the Clojure community prefers libraries over frameworks. The
-difference between a library and a framework isn't well-defined, but I think of
-it this way: a framework is just a library with a much larger scope than the
-average library. This has several implications:
+ - There should be high-level interfaces that give you lots of leverage (like
+   frameworks).
 
- - Frameworks have an inversion-of-control feeling: instead of plugging a bunch
-   of libraries into your code, you plug your code into the framework. (Some
-   people give this as the defining quality of a framework).
- - Frameworks are more likely to not handle all use cases.
+ - When the high-level interfaces don't cut it, it should be easy to use only
+   the parts you want, customizing behavior as needed (like libraries).
 
-The latter point is why we don't like frameworks. The effort required to patch a
-framework to accommodate the functionality you want is often higher than the
-effort to put all the libraries together yourself. The downside is that now you
-have to put all the libraries together yourself, which can be tedious.
+## Contents
 
-It'd be better if we could have the leverage promised by frameworks without
-sacrificing the flexibility of libraries. I believe this is entirely achievable;
-it just requires careful design. Armin Ronacher wrote a great article about this
-kind of design [here]. Essentially, the key is to provide a layered API. The top
-layer of the API should be as high-level as possible. When you hit a use case
-that the framework doesn't handle, it should be easy to drop down to a lower API
-layer and provide whatever customization you need.
+I keep the code in a single `src` dir, but I provide multiple artifacts. Any
+code in `src/trident/<foo>` is available in the `trident/<foo>` artifact. For
+example, `{trident/cli {:mvn/version "<version>"}}` will give you access to the
+`trident.cli` namespace. All artifacts use the same version.
 
-To summarize: although there are good reasons for using libraries instead of
-frameworks, that doesn't mean we shouldn't put effort into developing good
-frameworks. High-quality frameworks can boost the productivity of experienced
-Clojure developers and increase Clojure adoption.
+I use the `trident/docs` artifact for [documentation on cljdoc]. You can browse
+the namespaces there to see what's available, but briefly:
 
-Furthermore, Datomic (especially with ions) provides a big opportunity to do
-more abstraction. I think we could use a framework that's built specifically for
-Datomic, and I'm hoping for Trident to become this framework.
+ - `trident.build` is a collection of deps.edn-based build tasks. I've provided
+   a consistent interface over tasks for generating `pom.xml`; packaging,
+   installing and deploying jars; and ingesting code into a locally running
+   instance of cljdoc, and I've also provided tasks for working with monolithic
+   projects (like this one).
 
-## Status
+   Also see [trepl.py], a script that makes running build tasks fast.
 
-I wouldn't necessarily recommend actually using this code since it's at a very
-early stage, but I'd love to hear about it if you try. If you're interested in
-developing applications on top of Datomic, you might enjoy at least reading some
-of the code. There isn't any documentation yet (I'm working on that now), but
-`trident.web/init!` is a good starting point. There is also [a small
-website] which I have written with Trident.
+ - `trident.cli` makes it easy to define and reuse command line interfaces for
+   deps.edn-based build tasks. (I use it in `trident.build`).
 
-[This article] describes several features which I have since moved into Trident,
-including:
+ - `trident.util` is a collection of utility functions & macros.
 
- - An authorization system that allows the frontend to send arbitrary
-   transactions
- - DataScript as the frontend memory store, plus some light tools for syncing
-   datoms
- - Custom transaction functions without having to deploy them first
+ - `trident.repl` is a handful of convenience functions for use at the repl.
 
-In addition, I've organized Trident in a way that makes it highly modular
-without sacrificing convenience. All the code is stored in a single `src`
-folder, and individual projects (along with their dependencies) are defined in
-the `trident.edn` file. `jobryant.build` is used to take slices of the codebase and
-package them into jars, along with a couple other tasks.
-
-<!-- todo update, preferably automatically 
-The available artifacts (all with the same version) include:
-
- - `jobryant/util`
- - `jobryant/firebase`
- - `jobryant/views`
- - `jobryant/ion`
- - `jobryant/datascript`
- - `jobryant/datomic`
- - `jobryant/datomic-cloud`
- - `jobryant/trident`
- - `jobryant/trident-front`
- - `jobryant/trident-dev`
-
-The code of each artifact consists of:
-
-1. `src/jobryant/<name>*`, e.g. `jobryant/util` includes
-   `src/jobryant/util.cljc` and `src/jobryant/util/`.
-2. The code from any artifacts listed under `:local-deps` in `trident.edn`. For
-   example, the line `trident {:local-deps [util datomic-cloud firebase ion]`
-   means that `jobryant/trident` also includes `jobryant/util`,
-   `jobryant/datomic-cloud`, etc.
-
--->
+There are other libraries in there (including libraries for working with
+Datomic), but I'll make those visible after I've written documentation for them.
 
 ## Progress
 
-Rather than trying to cover a bunch of use cases up front, I'm taking the
-approach of:
+While I hope Trident will be useful for others, I'm primarily focusing on my own
+use cases because 1) there are things I want to build, 2) developing Trident as
+I build real things will help to make sure it's actually useful. With that out
+of the way, if you're interested in anything Trident provides, I'd love to chat.
 
- - Build real applications
- - Along the way, move as much code as possible from the apps' codebases into
-   Trident
+## Contact
 
-Currently the only application I've built with Trident is [FlexBudget], so
-Trident is still pretty contrived for that use case.
-
-Future work includes:
-
- - Write more documentation: docstrings, high-level information about Trident's architecture,
-   tutorials, etc.
- - Integrate existing libraries/frameworks as needed. For example, I haven't
-   used Fulcro at all, but I'd like to explore it.
- - Add facilities for real-time/subscribable queries. If/when reactive datalog
-   becomes available, I'd like to use that; in the mean time, I'm planning to do
-   something more manual.
- - Tools for mobile apps (I'm not very experienced with mobile development, but
-   I'll need to start writing some mobile apps soon)
+ - [email](mailto:foo@jacobobryant.com)
+ - [twitter](https://twitter.com/obryant666)
+ - `#trident` on [Clojurians](https://clojurians.slack.com)
 
 ## License
 
-Distributed under the [EPL v2.0]
+Distributed under the [EPL v2.0](LICENSE)
 
-Copyright &copy; 2019 [Jacob O'Bryant].
+Copyright &copy; 2019 [Jacob O'Bryant](https://jacobobryant.com).
 
-[EPL v2.0]: https://github.com/jacobobryant/trident/blob/master/LICENSE
-[Jacob O'Bryant]: https://jacobobryant.com
-[FlexBudget]: https://notjust.us
-[here]: http://lucumr.pocoo.org/2013/2/13/moar-classes/
-[planck]: https://github.com/planck-repl/planck
-[This article]: https://jacobobryant.com/post/2019/ion/
-[a small website]: https://github.com/jacobobryant/bud
+[documentation on cljdoc]: https://cljdoc.org/d/trident/docs/CURRENT/doc/readme
+[trepl.py]: https://cljdoc.org/d/trident/docs/CURRENT/doc/running-build-tasks-quickly-with-trepl-py-

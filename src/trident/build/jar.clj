@@ -6,7 +6,8 @@
             [trident.build.lib :refer [cli-options jar-file]]))
 
 (defn jar
-  "Packages a jar at target/<artifact-id>-<version>.jar. pom.xml must exist already."
+  "Packages a jar at `target/<artifact-id>-<version>.jar`.
+  `pom.xml` must exist already."
   [opts]
   ; TODO read artifact-id, version from pom
   (let [jar-file (jar-file opts)]
@@ -18,6 +19,7 @@
 (let [{:keys [cli main-fn help]}
       (make-cli
         {:fn #'jar
+         :prog "clj -m trident.build.jar"
          :config ["lib.edn"]
          :cli-options [:artifact-id :version]}
         cli-options)]

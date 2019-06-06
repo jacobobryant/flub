@@ -1,12 +1,13 @@
 (ns trident.cli
   "Tools for wrapping build tasks in CLIs.
 
-  Like `cli-matic`, this provides a higher-level wrapper over `clojure.tools.cli`. However,
-  `trident.cli` is designed specifically for making build tasks easily reusable (including
-  tasks not defined using `trident.cli`).
+  Like `cli-matic`, this provides a higher-level wrapper over
+  `clojure.tools.cli`. However, `trident.cli` is designed specifically for
+  making build tasks easily reusable (including tasks not defined using
+  `trident.cli`).
 
-  Most of the time you will need only [[make-cli]]. See `trident.build` for some
-  non-contrived example usage."
+  Most of the time you will need only [[make-cli]]. See the [[trident.build]]
+  source for some non-contrived example usage."
   (:require [trident.util :as u]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
@@ -18,10 +19,10 @@
 
   `summary` is returned from `clojure.tools.cli/parse-opts`. See [[expand-cli]]
   for the other keys."
-  [{:keys [summary subcommands desc args-spec config] :as cli}]
+  [{:keys [summary subcommands desc args-spec config prog] :as cli}]
   (let [subcommand-len (apply max 0 (map (comp count name) (keys subcommands)))]
     (u/text
-      true        (str "Usage: <program> "
+      true        (str "Usage: " (or prog "<program>") " "
                        (when summary "[options] ")
                        (if subcommands
                          "<subcommand> [<args>]"
@@ -74,31 +75,42 @@
       :else
       {:opts options :args arguments})))
 
-(defn- exit-code [x]
+(defn ^:no-doc exit-code [x]
   (if (integer? x) x 0))
+
+(declare dispatch)
+
+(defn ^:no-doc dispatch*
+  [{:keys [subcommands] f :fn} {:keys [opts args] :as params}]
+  (if (some? f)
+    (let [f (cond-> f (contains? params :opts) (partial opts))]
+      (with-no-shutdown (apply f args)))
+    (let [[cmd & args] args
+          cli (get subcommands cmd)]
+      (if (some? cli)
+        (dispatch cli args)
+        (do (println "Subcommand not recognized:" cmd) 1)))))
 
 (defn dispatch
   "Parses `args` and calls the function specified by `cli`.
 
+  If `cli` contains `:fn` but not `:cli-options`, `dispatch` will pass `args`
+  to `:fn` without parsing them first. See [[expand-cli]] for complete
+  information about the format of `cli`.
+
   Returns an integer exit code. If the dispatched function returns an integer,
   that will be the exit code, otherwise it will be 0. If `System/exit` is called
   during execution, `dispatch` will disable the call and return the exit code.
-  Calls to `shutdown-agents` will also be disabled.
-
-  See [[expand-cli]] for the format of `cli`."
-  [args cli]
+  Calls to `shutdown-agents` will also be disabled."
+  [cli args]
   (exit-code
     (let [{:keys [subcommands] f :fn} cli]
-      (if (some? f)
-        (let [{:keys [opts args code exit-msg]} (validate-args cli args)]
+      (if (some #(contains? cli %) [:cli-options :config])
+        (let [{:keys [code exit-msg] :as params} (validate-args cli args)]
           (if exit-msg
             (do (println exit-msg) code)
-            (with-no-shutdown (apply f opts args))))
-        (let [[cmd & args] args
-              cli (get subcommands cmd)]
-          (if (some? cli)
-            (dispatch args cli)
-            (do (println "Subcommand not recognized:" cmd) 1)))))))
+            (dispatch* cli params)))
+        (dispatch* cli {:args args})))))
 
 (defn ^:no-doc expand-options [{option-keys :cli-options :as cli} options]
   (let [options (u/map-kv (fn [k v] [k (update v 1 #(str "--" (name k) (some->> % (str " "))))])
@@ -156,6 +168,9 @@
      `:subcommands` and continue dispatching recursively. [[expand-cli]] will
      also recursively expand the values of `:subcommands`.
 
+   - `:prog`: text to use for the program name in the \"Usage: ...\" line in
+     `--help` output, e.g. `\"clj -m my.namespace\"`.
+
    - `:args-spec`: a specification of the non-option arguments to use in the
      \"Usage: ...\" line in `--help` output, e.g. `\"[foo1 [foo2 ...]]\"`.
 
@@ -194,9 +209,9 @@
        (and (var? (:fn x))
             (not (contains? x :desc))) (assoc x :desc (u/doclines (:fn x)))
        (var? (:fn x))                  (update x :fn deref)
-       (contains? x :cli-options)      (-> x
-                                           (expand-options options)
-                                           (add-opt edn-opt))
+       (contains? x :cli-options)      (expand-options x options)
+       (some #(contains? x %)
+             [:cli-options :config])   (add-opt x edn-opt)
        (or (contains? x :cli-options)
            (not (contains? x :fn)))    (add-opt x help-opt)
        (contains? x :subcommands)      (->> #(vector %1 (expand-cli %2 options))
@@ -208,7 +223,7 @@
 (defn main-fn
   "Returns a function suitable for binding to `-main`. See [[make-cli]]."
   [cli]
-  (fn [& args] (System/exit (dispatch args cli))))
+  (fn [& args] (System/exit (dispatch cli args))))
 
 (defn make-cli
   "Returns a map with the keys `:cli`, `:main-fn` and `:help`.
@@ -217,9 +232,9 @@
   [[dispatch]]. See [[expand-cli]] for the format of `compact-cli` and `options`,
   including tips about how to reuse other build tasks.
 
-  `main-fn`: a function suitable for binding to `-main`. It will call through to
-  the function specified by `cli`, afterwards calling `System/exit` with the
-  function's return value (if it's an integer) as the exit code.
+  `main-fn`: a function suitable for binding to `-main`. It will call
+  [[dispatch]], afterwards calling `System/exit` with the function's return
+  value (if it's an integer) as the exit code.
 
   `help`: the auto-generated `--help` output for this task. Good for including in
   `-main`'s docstring.
@@ -261,7 +276,7 @@
    (let [cli (expand-cli compact-cli options)
          help (when (some #(= (get % 1) "--help") (:cli-options cli))
                 (str "```\n"
-                     (with-out-str (dispatch ["--help"] cli))
+                     (with-out-str (dispatch cli ["--help"]))
                      "```"))]
      {:cli cli
       :main-fn (main-fn cli)

@@ -1,4 +1,4 @@
-(ns trident.util.datomic
+(ns ^:no-doc trident.util.datomic
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [trident.util :as u]

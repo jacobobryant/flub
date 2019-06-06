@@ -33,7 +33,7 @@
 
 ; todo handle missing options
 (defn sync-pom
-  "Generates a new pom.xml in the current directory (overwrites any existing pom.xml)."
+  "Generates a new `pom.xml` in the current directory (overwrites any existing `pom.xml`)."
   [{:keys [group-id artifact-id version github-repo]}]
   (let [clean? (= "" (sh "git" "status" "--porcelain"))
         _ (when (not (or clean? (ends-with? version "SNAPSHOT")))
@@ -63,6 +63,7 @@
 
 (let [{:keys [cli main-fn help]}
       (make-cli {:fn #'sync-pom
+                 :prog "clj -m trident.build.pom"
                  :config ["lib.edn"]
                  :cli-options [:group-id :artifact-id :version :github-repo]}
                 cli-options)]
