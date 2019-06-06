@@ -12,13 +12,15 @@ collection of libraries, containing anything I happen to abstract out of
 projects I'm working on.
 
 My top-level goal with Trident is to maximize code reuse (especially my own, but
-hopefully for others as well). This has two parts:
+hopefully for others as well). This has a few parts:
 
  - There should be high-level interfaces that give you lots of leverage (like
    frameworks).
 
  - When the high-level interfaces don't cut it, it should be easy to use only
    the parts you want, customizing behavior as needed (like libraries).
+
+ - Adding code to this framework/library should be very convenient.
 
 ## Contents
 
