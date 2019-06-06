@@ -37,7 +37,8 @@
                         garden]}
   ion           {:local-deps [util]
                  :deps [com.datomic/ion
-                        com.taoensso/timbre]}
+                        com.taoensso/timbre]
+                 :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
   datascript    {:local-deps [util]
                  :deps [datascript
                         reagent
@@ -53,14 +54,14 @@
                  :deps [com.datomic/client-cloud
                         mount
                         com.datomic/ion
-                        orchestra]}
+                        orchestra]
+                 :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
   frontend      {:local-deps [util datascript views]}
   web-repl      {:local-deps [web]
                  :deps [org.immutant/web
                         nrepl
                         org.clojure/tools.namespace]}
   docs          {:local-deps [repl build]}}
- :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
  :managed-deps
  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
   com.datomic/client-cloud {:mvn/version "0.8.71"}

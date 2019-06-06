@@ -29,6 +29,9 @@ in a `mono.edn` file. Example:
  ; links to files and directories in the top-level `src` directory. So you
  ; continue to edit files in the top-level `src`, and individual projects will
  ; get the changes immediately.
+ ;
+ ; Anything in the project maps (other than :deps and :local-deps) will be
+ ; merged into the projects' deps.edn files.
  :projects
  {repl  {:deps [org.clojure/tools.namespace
                 mount
@@ -70,9 +73,8 @@ in a `mono.edn` file. Example:
   org.clojure/tools.deps.alpha {:mvn/version \"0.6.496\"}
   org.clojure/tools.namespace {:mvn/version \"0.2.11\"}}
 
- ; :aliases and :mvn/repos will be included verbatim in each project's deps.edn
+ ; :aliases will be included verbatim in each project's deps.edn
  :aliases {:dev {:extra-deps {trident-repl {:local/root \"../repl\"}}}}
- :mvn/repos {\"datomic-cloud\" {:url \"s3://datomic-releases-1fc2183a/maven/releases\"}}
 
  ; The following keys will be included in a lib.edn file for each project. :artifact-id
  ; and :git-dir keys will also be automatically included. lib.edn is used as a config
@@ -106,7 +108,8 @@ in a `mono.edn` file. Example:
           maven-deps (conj maven-deps 'org.clojure/clojure)
           deps-edn (merge {:paths ["src"]
                            :deps (select-keys managed-deps maven-deps)}
-                          (select-keys opts [:mvn/repos :aliases]))
+                          (select-keys opts [:aliases])
+                          (dissoc (projects lib) :deps :local-deps))
           lib-edn (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
                          {:artifact-id (str lib)
                           :git-dir (path ".")})]
