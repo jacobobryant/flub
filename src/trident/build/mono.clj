@@ -97,8 +97,8 @@ in a `mono.edn` file. Example:
     [local-deps maven-deps]))
 
 (defn ^{:doc docstring} mono
-  [{:keys [projects group-id managed-deps] :as opts} & projects]
-  (doseq [lib (or (not-empty (map symbol projects)) (conj (keys projects) group-id))]
+  [{:keys [projects group-id managed-deps] :as opts} & libs]
+  (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))]
     (let [dest (path "target" lib "src" group-id)
           [local-deps maven-deps] (if (= lib group-id)
                                     [(keys projects) (keys managed-deps)]
