@@ -3,12 +3,23 @@
             [hiccup.core :as hiccup]
             [clojure.walk :refer [postwalk]]))
 
-(defn css [style]
-  (let [s (garden/css {:pretty-print? false} [:foo style])]
-    (-> s
-        (subs 4 (- (count s) 1)))))
+(defn css
+  "Converts a standalone style map to css with `garden`.
 
-(defn html [form]
+  See [[html]]."
+  [style]
+  (let [s (garden/css {:pretty-print? false} [:foo style])]
+    (subs s 4 (- (count s) 1))))
+
+(defn html
+  "Wraps `hiccup.core/html`, allowing you to define inline-styles like in Reagent.
+
+  Example:
+  ```
+  (html [:div {:style {:color \"black\"}}])
+  => \"<div style=\\\"color:black\\\"></div>\"
+  ```"
+  [form]
   (->> form
        (postwalk
          (fn [form]

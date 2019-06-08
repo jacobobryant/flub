@@ -1,5 +1,4 @@
 (ns trident.datomic.api
-  (:refer-clojure :exclude [sync filter])
   (:require [trident.util :as u]
             [trident.datomic.util :as du]
             [datomic.api :as d]

@@ -1,11 +1,24 @@
-(ns trident.views)
+(ns trident.views
+  "Utilities for working with frontend views.")
 
-(defn get-opts [opts contents]
-  (if (map? opts)
-    [opts contents]
-    [nil (conj contents opts)]))
+(defn ^:no-doc get-opts [args]
+  (cond-> args
+    (-> args first map? not) (conj nil)))
 
-(defmacro defview [f [opts contents] & forms]
-  `(defn ~f [opts# & contents#]
-     (let [[~opts ~contents] (get-opts opts# contents#)]
+(defmacro defview
+  "Defines a function that optionally takes a map as the first argument.
+
+  This is similar to Reagent components. Example:
+  ```
+  (defview my-view [opts foo bar]
+    [opts foo bar])
+
+  (my-view {:some-opt 1} \"a\" \"b\")
+  => [{:some-opt 1} \"a\" \"b\"]
+  (my-view \"a\" \"b\")
+  => [nil \"a\" \"b\"]
+  ```"
+  [f [opts & args] & forms]
+  `(defn ~f [& args#]
+     (let [[~opts ~@args] (get-opts args#)]
        ~@forms)))

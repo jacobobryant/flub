@@ -276,7 +276,7 @@
   (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
 
 (defn map-kv [f xs]
-  (into {} (map (fn [[k v]] (f k v)) xs)))
+  (into {} (map #(apply f %) xs)))
 
 (defn doclines
   "Returns the docstring of a var as a collection of lines, removing indentation."

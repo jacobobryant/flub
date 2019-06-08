@@ -64,21 +64,15 @@ trepl is inspired by [Grenchman](https://github.com/technomancy/grenchman), but:
 Start a build repl:
 ```
 # might want to put this in a file
-clj -Sdeps '{:deps {trident/build {:mvn/version "RELEASE"}
+clj -Sdeps '{:deps {trident/build {:mvn/version "RELEASE"} ; includes trident.cli
                     trident/repl  {:mvn/version "RELEASE"}}}' \
-    -e "(do (require 'trident.repl)
-            (trident.repl/init) ; starts nRepl on port 7888
-            (require 'trident.build)) ; just to get compilation out of the way
-            " -r
+    -e "(do (require 'trident.repl) (trident.repl/init))" -r
 ```
+(`trident.repl/init` will start an nRepl server on port 7888 by default.)
 
 Run a build task:
 ```
 # Requires Python 3
-./trepl.py -p 7888 main trident.build/-main --help # nice and speedy!
-```
-
-You can use an alias for further convenience:
-```
-alias trepl='/path/to/trepl.py -p 7888 main trident.build/-main'
+alias build='/path/to/trepl.py -p 7888 main trident.build/-main'
+build --help # nice and speedy!
 ```

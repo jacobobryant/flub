@@ -1,4 +1,7 @@
 (ns trident.web
+  "Highly contrived web framework.
+
+  Great for making websites that look exactly like the one I made with this."
   (:require [trident.util :as u]
             [trident.util.datomic :as ud]
             [trident.ring :refer [wrap-ion-defaults]]
@@ -13,7 +16,7 @@
             [orchestra.core :refer [defn-spec]]
             [datomic.ion.lambda.api-gateway :refer [ionize]]))
 
-(s/def ::config (fn [x] (every? #(contains? x %) [:env :app-name])))
+(s/def ::config (s/keys :req-un [:env :app-name]))
 
 (u/defconfig
   {:uid-opts {:verify-token (fn [token] (verify-token token #(jion/get-param :firebase-key)))}

@@ -1,4 +1,5 @@
 (ns trident.web-repl
+  "A dev web server for use with [[trident.web]]."
   (:require [trident.util :as u]
             [immutant.web :as imm]
             [trident.web :as trident]

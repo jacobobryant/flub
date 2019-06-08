@@ -1,4 +1,4 @@
-{:version "0.1.3"
+{:version "0.1.4-SNAPSHOT"
  :group-id "trident"
  :github-repo "jacobobryant/trident"
  :cljdoc-dir "/home/arch/dev/cljdoc/"
@@ -61,7 +61,7 @@
                  :deps [org.immutant/web
                         nrepl
                         org.clojure/tools.namespace]}
-  docs          {:local-deps [repl build]}}
+  docs          {:local-deps [repl util cli build datascript ring firebase views datomic-cloud]}}
  :managed-deps
  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
   com.datomic/client-cloud {:mvn/version "0.8.71"}
