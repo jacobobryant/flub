@@ -1,4 +1,4 @@
-{:version "0.1.4-SNAPSHOT"
+{:version "0.1.4-3-SNAPSHOT"
  :group-id "trident"
  :github-repo "jacobobryant/trident"
  :cljdoc-dir "/home/arch/dev/cljdoc/"
@@ -61,7 +61,10 @@
                  :deps [org.immutant/web
                         nrepl
                         org.clojure/tools.namespace]}
-  docs          {:local-deps [repl util cli build datascript ring firebase views datomic-cloud]}}
+  docs          {:local-deps [repl util cli build datascript ring firebase
+                              views datomic-cloud ion web web-repl]
+                 :deps [jobryant/mock]
+                 :exclude [com.datomic/ion]}}
  :managed-deps
  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
   com.datomic/client-cloud {:mvn/version "0.8.71"}
@@ -75,6 +78,7 @@
   deps-deploy {:mvn/version "0.0.9"}
   garden {:mvn/version "1.3.9"}
   hiccup {:mvn/version "1.0.5"}
+  jobryant/mock {:mvn/version "0.0.1-SNAPSHOT"}
   jobryant/pack {:mvn/version "1.0"}
   me.raynes/fs {:mvn/version "1.4.6"}
   mount {:mvn/version "0.1.15"}

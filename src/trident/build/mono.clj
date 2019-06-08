@@ -95,7 +95,9 @@ in a `mono.edn` file. Example:
                          (recur
                            deps
                            (difference local-deps deps)))))
-        maven-deps (set (mapcat #(get-in projects [% :deps]) local-deps))]
+        maven-deps (set (mapcat #(get-in projects [% :deps]) local-deps))
+        exclude    (mapcat #(get-in projects [% :exclude]) local-deps)
+        maven-deps (apply disj maven-deps exclude)]
     [local-deps maven-deps]))
 
 (defn ^{:doc docstring} mono

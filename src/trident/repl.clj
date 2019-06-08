@@ -17,11 +17,19 @@
             [mount.core :as mount]
             [orchestra.spec.test :as st]))
 
+(defn reset*
+  "Reloads namespaces, starting and stopping mount components"
+  ([] (reset* {}))
+  ([{:keys [mount?] :or {mount? true}}]
+   (do (mount/stop)
+       (if mount?
+         (tn/refresh :after 'mount.core/start)
+         (tn/refresh)))))
+
 (defmacro reset
   "Reloads namespaces, starting and stopping mount components"
-  []
-  `(do (mount/stop)
-       (tn/refresh :after 'mount.core/start)
+  [& args]
+  `(do (reset* ~@args)
        (use 'clojure.repl)
        :ready))
 
@@ -30,7 +38,7 @@
   ([{:keys [nrepl-port] :or {nrepl-port 7888}}]
    (st/instrument)
    (nrepl/start-server :port nrepl-port)
-   (reset)
+   (reset {})
 
    (println "Run `(user/reset)` to reload all source changes.")
    (println "Run this if your repl gets borked after a `(user/reset)`:")
@@ -40,6 +48,6 @@
 
 (in-ns 'user)
 (require 'trident.repl)
-(defmacro reset []
-  '(trident.repl/reset))
+(defmacro reset [& args]
+  `(trident.repl/reset ~@args))
 (in-ns 'trident.repl)

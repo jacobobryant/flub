@@ -4,11 +4,11 @@
   Great for making websites that look exactly like the one I made with this."
   (:require [trident.util :as u]
             [trident.util.datomic :as ud]
-            [trident.ring :refer [wrap-ion-defaults]]
+            [trident.ring :refer [wrap-trident-defaults]]
             [trident.datomic-cloud.txauth :as txauth]
             [trident.datomic-cloud.client :refer [connect]]
             [trident.firebase :refer [verify-token]]
-            [trident.ion :as jion]
+            [trident.ion :as tion]
             [datomic.ion :as ion]
             [datomic.client.api :as d]
             [clojure.spec.alpha :as s]
@@ -16,10 +16,10 @@
             [orchestra.core :refer [defn-spec]]
             [datomic.ion.lambda.api-gateway :refer [ionize]]))
 
-(s/def ::config (s/keys :req-un [:env :app-name]))
+(s/def ::config (s/keys :req-un [::env ::app-name]))
 
 (u/defconfig
-  {:uid-opts {:verify-token (fn [token] (verify-token token #(jion/get-param :firebase-key)))}
+  {:uid-opts {:verify-token (fn [token] (verify-token token #(tion/get-param :firebase-key)))}
    :env :dev
    :db-name "dev"
    :client-cfg {:system ^:derived #(:app-name %)
@@ -58,11 +58,11 @@
                     :authorizers (:authorizers config)}))))
 
 (defn-spec init! any? [default-config ::config]
-  (jion/set-timbre-ion-appender!)
+  (tion/set-timbre-ion-appender!)
 
   (init-config! default-config (ion/get-env))
-  (jion/init-config! (select-keys config [:env :app-name]))
+  (tion/init-config! (select-keys config [:env :app-name]))
 
-  (def handler* (wrap-ion-defaults routes (merge (select-keys config [:origins :uid-opts])
-                                                 {:conn-var #'conn})))
+  (def handler* (wrap-trident-defaults routes (merge (select-keys config [:origins :uid-opts])
+                                                     {:conn-var #'conn})))
   (def handler (ionize handler*)))
