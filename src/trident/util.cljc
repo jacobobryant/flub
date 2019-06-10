@@ -276,14 +276,14 @@
 (defn pad [n _val coll]
   (take n (concat coll (repeat _val))))
 
-(defn text-columns
+(defn format-columns
   "Formats rows of text into columns.
 
   Example:
   ```
-  (doseq [row (text-columns [[\"hellooooooooo \" \"there\"]
-                             [\"foo \" \"bar\"]
-                             [\"one column\"]])]
+  (doseq [row (format-columns [[\"hellooooooooo \" \"there\"]
+                               [\"foo \" \"bar\"]
+                               [\"one column\"]])]
     (println row))
   hellooooooooo there
   foo           bar
@@ -296,7 +296,7 @@
         lens (apply map (fn [& column-parts]
                           (apply max (map count column-parts)))
                     rows)
-        fmt (str/join (map #(str "%" (str "-" %) "s") lens))]
+        fmt (str/join (map #(str "%" (when (not (zero? %)) (str "-" %)) "s") lens))]
     (->> rows
          (map #(apply (partial format fmt) %))
          (map str/trimr))))

@@ -1,9 +1,3 @@
 #!/bin/bash
 # tb - Trident Build, not Tuberculosis
-
-# Change these as needed
-PORT=7888
-ENTRY_POINT=trident.build/-main
-
-TREPL="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"/trepl.py
-$TREPL -p $PORT main $ENTRY_POINT "$@"
+GRENCH_PORT=7888 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"

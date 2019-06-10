@@ -2,6 +2,9 @@
   (:require [clojure.java.shell :as shell]
             [clojure.pprint :refer [pprint]]
             [clojure.string :refer [split join starts-with? trim]]
+            [trident.util :as u]
+            [clojure.java.io :as io]
+            [clojure.tools.deps.alpha.reader :as reader]
             [me.raynes.fs :as fs :refer [absolute]])
   (:import jnr.posix.POSIXFactory
            java.nio.file.LinkOption))
@@ -37,6 +40,9 @@
   "Delete recursively without following symlinks, like `rm -rf`"
   [f]
   (fs/delete-dir f LinkOption/NOFOLLOW_LINKS))
+
+(defn read-deps []
+  (reader/read-deps [(io/file (path "deps.edn"))]))
 
 (let [posix (delay (POSIXFactory/getNativePOSIX))]
   (defn chdir
@@ -108,3 +114,11 @@
   "Runs forms, preventing calls to `System/exit` or `shutdown-agents`."
   [& forms]
   `(with-no-shutdown* (fn [] ~@forms)))
+
+(defn -main
+  "Launch other commands using [[with-no-shutdown]] and [[with-dir]]."
+  [dir entry-point & args]
+  (let [f (u/load-var (symbol entry-point))]
+    (with-no-shutdown
+      (with-dir dir
+        (apply f args)))))

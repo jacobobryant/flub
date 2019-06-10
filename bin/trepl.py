@@ -112,13 +112,8 @@ def default_port(directory=os.getcwd()):
         sys.exit(1)
 
 def main_code(entry_point, *args):
-    return ("(do (require 'trident.cli.util) "
-                "(require '{}) "
-                "(trident.cli.util/with-no-shutdown "
-                  "(trident.cli.util/with-dir \"{}\" "
-                  "({} {}))))").format(
+    return ("(do (require '{}) ({} {}))))").format(
             entry_point.split('/')[0],
-            os.getcwd(),
             entry_point,
             ' '.join(['"' + x.replace('"', '\\"') + '"' for x in args]))
 
@@ -133,12 +128,7 @@ if __name__ == "__main__":
     eval_parser.add_argument('code', help="e.g. \"(println \\\"hey\\\")\". The expression's value will be "
             "used as this script's exit code (if it's an integer).")
     main_parser = subparsers.add_parser('main', usage="%(prog)s entry_point [arg1 [arg2 ...]]",
-            epilog="The trident.cli namespace must be available. This namespace is used to "
-            "1) run the function in the current directory, 2) disable calls to `System/exit` "
-            "and `shutdown-agents`. NOTE: the working directory will be changed for the whole "
-            "repl process while this command runs. If that's a problem, you may want to run a "
-            "dedicated repl for use with this command.",
-            help="Run an existing function. Requires trident.cli namespace.")
+            help="Run an existing function.")
     main_parser.add_argument('entry_point', help="The fully-qualified function name followed by any arguments, "
                         'e.g. `%(prog)s foo.core/bar hello 7`. All arguments will be passed as strings.')
 

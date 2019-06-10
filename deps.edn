@@ -1,0 +1,116 @@
+{:trident/mono
+ {:version "0.1.4-5-SNAPSHOT"
+  :group-id "trident"
+  :github-repo "jacobobryant/trident"
+  :cljdoc-dir "/home/arch/dev/cljdoc/"
+  :aliases {:dev {:extra-deps {trident-repl {:local/root "../repl"}
+                               trident-build {:local/root "../build"}}}}
+  :projects
+  {repl          {:desc "A handful of convenience functions for use at the repl."
+                  :deps [org.clojure/tools.namespace
+                         mount
+                         orchestra
+                         nrepl]}
+   util          {:desc "A collection of utility functions & macros."
+                  :deps [org.clojure/core.async
+                         orchestra
+                         com.taoensso/encore]}
+   cli           {:desc "Makes it easy to define and reuse CLIs for tools.deps-based build tasks."
+                  :local-deps [util]
+                  :deps [me.raynes/fs
+                         org.clojure/tools.cli
+                         net.java.dev.jna/jna
+                         com.github.jnr/jnr-posix]}
+   build         {:desc "A collection of build tasks made with `trident/cli`."
+                  :local-deps [util cli]
+                  :deps [org.clojure/data.xml
+                         org.clojure/data.zip
+                         deps-deploy
+                         me.raynes/fs
+                         orchestra
+                         jobryant/pack
+                         org.clojure/tools.namespace
+                         org.clojure/tools.deps.alpha]}
+   ring          {:desc "Some Ring middleware."
+                  :deps [com.taoensso/timbre
+                         mount
+                         ring/ring-defaults
+                         ring-cors
+                         ring-middleware-format]}
+   firebase      {:desc "Functions for authenticating Firebase user tokens."
+                  :deps [com.google.firebase/firebase-admin]}
+   views         {:desc "Some Reagent components and stuff."
+                  :local-deps [util]
+                  :deps [hiccup
+                         re-com
+                         garden]}
+   ion           {:desc "Utilities for working with Datomic Ions"
+                  :local-deps [util]
+                  :deps [com.datomic/ion
+                         com.taoensso/timbre]
+                  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
+   datascript    {:desc "Frontend tools for syncing Datascript with Datomic."
+                  :local-deps [util]
+                  :deps [datascript
+                         reagent
+                         com.andrewmcveigh/cljs-time]}
+   datomic       {:desc "Janky file-based persistence for Datomic Free."
+                  :local-deps [util]
+                  :deps [com.datomic/datomic-free
+                         me.raynes/fs]}
+   datomic-cloud {:desc "Tools for Datomic Cloud."
+                  :local-deps [util]
+                  :deps [com.datomic/client-cloud
+                         com.taoensso/timbre
+                         orchestra]}
+   web           {:desc "Highly contrived web framework."
+                  :local-deps [util datomic-cloud firebase ion ring]
+                  :deps [com.datomic/client-cloud
+                         mount
+                         com.datomic/ion
+                         orchestra]
+                  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
+   frontend      {:desc "Just a bundle of other artifacts."
+                  :local-deps [util datascript views]}
+   web-repl      {:desc "A dev web server for use with `trident/web`."
+                  :local-deps [web]
+                  :deps [org.immutant/web
+                         nrepl
+                         org.clojure/tools.namespace]}
+   docs          {:local-deps [repl util cli build datascript ring firebase
+                               views datomic-cloud ion web web-repl]
+                  :deps [jobryant/mock]
+                  :exclude [com.datomic/ion]}}
+  :managed-deps
+  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
+   com.datomic/client-cloud {:mvn/version "0.8.71"}
+   com.datomic/datomic-free {:mvn/version "0.9.5697"}
+   com.datomic/ion {:mvn/version "0.9.28"}
+   com.github.jnr/jnr-posix {:mvn/version "3.0.49"}
+   com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
+   com.taoensso/encore {:mvn/version "2.112.0"}
+   com.taoensso/timbre {:mvn/version "4.10.0"}
+   datascript {:mvn/version "0.18.2"}
+   deps-deploy {:mvn/version "0.0.9"}
+   garden {:mvn/version "1.3.9"}
+   hiccup {:mvn/version "1.0.5"}
+   jobryant/mock {:mvn/version "0.0.1-SNAPSHOT"}
+   jobryant/pack {:mvn/version "1.0"}
+   me.raynes/fs {:mvn/version "1.4.6"}
+   mount {:mvn/version "0.1.15"}
+   net.java.dev.jna/jna {:mvn/version "5.3.1"}
+   nrepl {:mvn/version "0.6.0"}
+   orchestra {:mvn/version "2019.02.06-1"}
+   org.clojure/clojure {:mvn/version "1.9.0"}
+   org.clojure/core.async {:mvn/version "0.4.490"}
+   org.clojure/data.xml {:mvn/version "0.2.0-alpha5"}
+   org.clojure/data.zip {:mvn/version "0.1.3"}
+   org.clojure/tools.cli {:mvn/version "0.4.2"}
+   org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}
+   org.clojure/tools.namespace {:mvn/version "0.2.11"}
+   org.immutant/web {:mvn/version "2.1.10"}
+   re-com {:mvn/version "2.5.0"}
+   reagent {:mvn/version "0.8.1"}
+   ring-cors {:mvn/version "0.1.13"}
+   ring-middleware-format {:mvn/version "0.7.4"}
+   ring/ring-defaults {:mvn/version "0.3.2"}}}}

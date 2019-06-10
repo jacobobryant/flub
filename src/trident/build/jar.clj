@@ -1,5 +1,5 @@
 (ns trident.build.jar
-  (:require [trident.cli :refer [make-cli expand-cli]]
+  (:require [trident.cli :refer [defmain]]
             [trident.cli.util :refer [sh path]]
             [me.raynes.fs :as fs]
             [mach.pack.alpha.skinny :as skinny]
@@ -16,12 +16,11 @@
     (fs/copy "pom.xml" "target/extra/META-INF/pom.xml")
     (skinny/-main "--no-libs" "-e" (path "target/extra") "--project-path" jar-file)))
 
-(let [{:keys [cli main-fn help]}
-      (make-cli
-        {:fn #'jar
-         :prog "clj -m trident.build.jar"
-         :config ["lib.edn"]
-         :cli-options [:artifact-id :version]}
-        cli-options)]
-  (def cli cli)
-  (def ^{:doc help} -main main-fn))
+(def cli
+  {:fn #'jar
+   :prog "clj -m trident.build.jar"
+   :config :trident/lib
+   :options cli-options
+   :option-keys [:artifact-id :version]})
+
+(defmain cli)
