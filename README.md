@@ -23,30 +23,43 @@ hopefully for others as well). This has two parts:
 ## Contents
 
 I keep the code in a single `src` dir, but I provide multiple artifacts. Any
-code in `src/trident/<foo>` is available in the `trident/<foo>` artifact. For
+code in `src/trident/<foo>` is available in the `tridnet/<foo>` artifact. For
 example, `{trident/cli {:mvn/version "<version>"}}` will give you access to the
 `trident.cli` namespace. All artifacts use the same version.
 
-I use the `trident/docs` artifact for [documentation on cljdoc]. You can browse
-the namespaces there to see what's available, but briefly:
+I use the `trident/docs` artifact for [documentation on cljdoc]. You can
+[browse the namespaces](https://cljdoc.org/d/trident/docs/CURRENT/api/trident)
+to see what's available, but here's a list of the artifacts for convenience:
 
- - `trident.build` is a collection of deps.edn-based build tasks. I've provided
-   a consistent interface over tasks for generating `pom.xml`; packaging,
-   installing and deploying jars; and ingesting code into a locally running
-   instance of cljdoc, and I've also provided tasks for working with monolithic
-   projects (like this one).
+ - [`trident/repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.repl). A handful of convenience functions for use at the repl.
 
-   Also see [trepl.py], a script that makes running build tasks fast.
+ - [`trident/util`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.util). A collection of utility functions & macros.
 
- - `trident.cli` makes it easy to define and reuse command line interfaces for
-   deps.edn-based build tasks. (I use it in `trident.build`).
+ - [`trident/cli`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cli) (includes `util`). Makes it easy to define and reuse CLIs for tools.deps-based build tasks.
 
- - `trident.util` is a collection of utility functions & macros.
+ - [`trident/build`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.build) (includes `util`, `cli`). A collection of build tasks made with `trident/cli`.
 
- - `trident.repl` is a handful of convenience functions for use at the repl.
+ - [`trident/datomic`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic) (includes `util`). Janky file-based persistence for Datomic Free.
 
-There are other libraries in there (including libraries for working with
-Datomic), but I'll make those visible after I've written documentation for them.
+ - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud) (includes `util`). Tools for Datomic Cloud.
+
+ - [`trident/ring`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ring). Some Ring middleware.
+
+ - [`trident/firebase`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firebase). Functions for authenticating Firebase user tokens.
+
+ - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion) (includes `util`). Utilities for working with Datomic Ions
+
+ - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web) (includes `util`, `datomic-cloud`, `firebase`, `ion`, `ring`). Highly contrived web framework.
+
+ - [`trident/web-repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web-repl) (includes `web`). A dev web server for use with `trident/web`.
+
+ - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript) (includes `util`). Frontend tools for syncing Datascript with Datomic.
+
+ - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views) (includes `util`). Some Reagent components and stuff.
+
+ - `trident/frontend` (includes `util`, `datascript`, `views`). Just a bundle of other artifacts.
+
+ Also see [trepl.py], a script that makes running build tasks fast.
 
 ## Progress
 

@@ -17,6 +17,14 @@
 (defn pred-> [x f g]
   (if (f x) (g x) x))
 
+(defn derive-config
+  "Replaces any `^:derived` values in `m`. See [[defconfig]]."
+  [m]
+  (postwalk #(if (:derived (meta %)) (% m) %) m))
+
+(defn ^:no-doc text-rows [lines]
+  (str/join \newline (remove nil? (flatten lines))))
+
 #?(:clj (do
 
 (defmacro capture [& xs]
@@ -159,11 +167,6 @@
                             ~parent-instance
                             ~@(rest arglist))))))]))))
 
-(defn derive-config
-  "Replaces any `^:derived` values in `m`. See [[defconfig]]."
-  [m]
-  (postwalk #(if (:derived (meta %)) (% m) %) m))
-
 (defmacro defconfig
   "Defines `config` and `init-config!` vars.
 
@@ -195,9 +198,6 @@
              c# (derive-config c#)]
          (def ~'config c#)))))
 
-(defn ^:no-doc text* [lines]
-  (str/join \newline (remove nil? (flatten lines))))
-
 (defmacro text
   "Generates a string from pairs of conditions and lines of text.
 
@@ -216,30 +216,17 @@
   quux
   ```"
   [& forms]
-  `(text* [~@(for [[condition lines] (partition 2 forms)]
-               `(when ~condition ~lines))]))
+  `(text-rows [~@(for [[condition lines] (partition 2 forms)]
+                   `(when ~condition ~lines))]))
 
-(defn text-columns
-  "Formats rows of text into columns.
+(def ^:no-doc instant-type java.util.Date)
 
-  Example:
-  ```
-  (doseq [row (text-columns [[\"hellooooooooo \" \"there\"]
-                             [\"foo \" \"bar\"]])]
-    (println row))
-  hellooooooooo there
-  foo           bar
-  ```"
-  [rows]
-  (let [lens (apply map (fn [& column-parts]
-                          (apply max (map count column-parts)))
-                    rows)
-        fmt (str/join (map #(str "%" (str "-" %) "s") lens))]
-    (map #(apply (partial format fmt) %) rows)))
+(def ord int)
 
-))
+(defn parse-int [s]
+  (Long/parseLong s))
 
-#?(:cljs (do
+) :cljs (do
 
 (defn to-chan
   "Converts a js promise to a channel.
@@ -255,22 +242,19 @@
 (def ^{:doc "alias for `goog.string.format`"}
   format gstring/format)
 
-))
+(def ^:no-doc instant-type (type #inst "0001-01-01"))
 
-(def ^:no-doc instant-type #?(:cljs (type #inst "0001-01-01")
-                              :clj java.util.Date))
-(defn instant? [x]
-  (= (type x) instant-type))
-
-#?(:cljs
 (def char->int (into {} (map #(vector (char %) %) (range 256))))
-)
 
-(defn ord [c]
-  (#?(:clj int :cljs char->int) c))
+(def ord char->int)
 
 (defn parse-int [s]
-  (#?(:clj Long/parseLong :cljs js/parseInt) s))
+  (js/parseInt s))
+
+))
+
+(defn instant? [x]
+  (= (type x) instant-type))
 
 (defn rand-str [len]
   (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
@@ -288,3 +272,31 @@
                       (apply min ##Inf))]
       (map-indexed #(cond-> %2 (not (zero? %1)) (subs indent))
                    lines))))
+
+(defn pad [n _val coll]
+  (take n (concat coll (repeat _val))))
+
+(defn text-columns
+  "Formats rows of text into columns.
+
+  Example:
+  ```
+  (doseq [row (text-columns [[\"hellooooooooo \" \"there\"]
+                             [\"foo \" \"bar\"]
+                             [\"one column\"]])]
+    (println row))
+  hellooooooooo there
+  foo           bar
+  one column
+  ```"
+  [rows]
+  (let [
+        n-cols (apply max (map count rows))
+        rows (map (partial pad n-cols " ") rows)
+        lens (apply map (fn [& column-parts]
+                          (apply max (map count column-parts)))
+                    rows)
+        fmt (str/join (map #(str "%" (str "-" %) "s") lens))]
+    (->> rows
+         (map #(apply (partial format fmt) %))
+         (map str/trimr))))

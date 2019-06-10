@@ -1,10 +1,12 @@
 (ns trident.build.mono
   "Build tasks for working with monolithic projects. See [[mono]]."
   (:require [clojure.set :refer [union difference]]
+            [trident.util :as u]
             [trident.cli :refer [make-cli expand-cli dispatch]]
             [trident.cli.util :refer [path sppit with-dir rmrf]]
             [me.raynes.fs :as fs]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.tools.namespace.dependency :as dep]))
 
 (def ^:no-doc docstring
 "Creates project directories for a monolithic project.
@@ -100,7 +102,7 @@ in a `mono.edn` file. Example:
         maven-deps (apply disj maven-deps exclude)]
     [local-deps maven-deps]))
 
-(defn ^{:doc docstring} mono
+(defn ^{:doc docstring} reset
   [{:keys [projects group-id managed-deps] :as opts} & libs]
   (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))]
     (let [dest (path "target" lib "src" group-id)
@@ -128,18 +130,48 @@ in a `mono.edn` file. Example:
         (sppit "deps.edn" deps-edn)
         (sppit "lib.edn" lib-edn)))))
 
+(defn info
+  "Prints artifact information."
+  [{:keys [projects group-id]}]
+  (let [g (reduce
+            (fn [graph [child parent]]
+              (dep/depend graph child parent))
+            (dep/graph)
+            (for [[proj info] projects
+                  dep (:local-deps info)]
+              [proj dep]))]
+    (doseq [proj (dep/topo-sort g)]
+      (println
+        (u/text-rows
+          (u/text-columns
+            [[" - " (str "[`" group-id "/" proj
+                         "`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident." proj ")"
+                         (when-some [deps (get-in projects [proj :local-deps])]
+                           (str " (includes `" (str/join "`, `" deps) "`)"))
+                         (some->> (get-in projects [proj :desc]) (str ". ")))]
+             [""]]))))))
+
 (let [{:keys [cli main-fn help]}
       (make-cli
-        {:fn #'mono
-         :prog "clj -m trident.build.mono"
-         :desc ["Creates project directories for a monolithic project."
-                ""
-                "If no projects are specified, operates on all projects. `mono.edn` must be in"
-                "the current directory. See the docstring for trident.build.mono/mono for"
-                "the format of `mono.edn`."]
-         :cli-options nil
-         :args-spec "[<project(s)>]"
-         :config ["mono.edn"]})]
+        {:prog "clj -m trident.build.mono"
+         :desc ["Work with monolithic projects."]
+         :subcommands
+         {"reset"
+          {:fn #'reset
+           :prog "clj -m trident.build.mono reset"
+           :desc ["Creates project directories for a monolithic project."
+                  ""
+                  "If no projects are specified, operates on all projects. `mono.edn` must be in"
+                  "the current directory. See the docstring for trident.build.mono/reset for"
+                  "the format of `mono.edn`."]
+           :cli-options nil
+           :args-spec "[<project(s)>]"
+           :config ["mono.edn"]}
+          "info"
+          {:fn #'info
+           :prog "clj -m trident.build.mono info"
+           :cli-options nil
+           :config ["mono.edn"]}}})]
   (def cli cli)
   (def ^{:doc help} -main main-fn))
 

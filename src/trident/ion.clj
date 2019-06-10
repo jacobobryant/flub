@@ -1,5 +1,5 @@
 (ns trident.ion
-  "Some utilities for working with Datomic Ions"
+  "Utilities for working with Datomic Ions"
   (:require [trident.util :as u]
             [datomic.ion.cast :as cast]
             [taoensso.timbre :as timbre]
