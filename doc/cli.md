@@ -62,7 +62,7 @@ EOD
 echo '{:aliases {:build {:extra-deps {build {:local/root "build"}}}}}' > deps.edn
 mkdir build
 cat > build/deps.edn << EOD
-{:deps {trident-cli {:mvn/version "0.1.4"}
+{:deps {trident/cli {:mvn/version "0.1.5"}
         nrepl {:mvn/version "0.6.0"}
         seancorfield/clj-new {:mvn/version "0.5.5"}
         luchiniatwork/cambada {:mvn/version "1.0.0"}}}

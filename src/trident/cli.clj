@@ -23,9 +23,10 @@
   The description will be derived from cli's fn's docstring if `:desc` isn't
   present."
   [cli]
-  (cond
-    (contains? cli :desc) (:desc cli)
-    (var? (:fn cli))      (u/doclines (:fn cli))))
+  (let [cli (if (map? cli) cli {:fn cli})]
+    (cond
+      (contains? cli :desc) (:desc cli)
+      (var? (:fn cli))      (u/doclines (:fn cli)))))
 
 (defn usage
   "Returns a usage string.
@@ -91,9 +92,10 @@
   Parsing is disabled if `:fn` is specified but `:option-keys` and `:config`
   aren't. This can be overridden by setting `:cli-processing?`."
   [cli]
-  (get cli :cli-processing?
-       (or (not (contains? cli :fn))
-           (some #(contains? cli %) [:option-keys :config]))))
+  (and (map? cli)
+       (get cli :cli-processing?
+            (or (not (contains? cli :fn))
+                (some #(contains? cli %) [:option-keys :config])))))
 
 (defn dispatch
   "Parses `args` and calls the function or subcommand specified by `cli`.

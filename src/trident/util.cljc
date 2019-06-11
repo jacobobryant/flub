@@ -290,8 +290,7 @@
   one column
   ```"
   [rows]
-  (let [
-        n-cols (apply max (map count rows))
+  (let [n-cols (apply max (map count rows))
         rows (map (partial pad n-cols " ") rows)
         lens (apply map (fn [& column-parts]
                           (apply max (map count column-parts)))
