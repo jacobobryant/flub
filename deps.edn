@@ -62,7 +62,8 @@
                   :local-deps [util]
                   :deps [com.datomic/client-cloud
                          com.taoensso/timbre
-                         orchestra]}
+                         orchestra]
+                  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    web           {:desc "Highly contrived web framework."
                   :local-deps [util datomic-cloud firebase ion ring]
                   :deps [com.datomic/client-cloud
@@ -76,7 +77,8 @@
                   :local-deps [web]
                   :deps [org.immutant/web
                          nrepl
-                         org.clojure/tools.namespace]}
+                         org.clojure/tools.namespace]
+                  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    docs          {:local-deps [repl util cli build datascript ring firebase
                                views datomic-cloud ion web web-repl]
                   :deps [jobryant/mock]
