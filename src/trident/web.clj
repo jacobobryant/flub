@@ -29,7 +29,8 @@
                 :region "us-east-1"
                 :proxy-port 8182}
    :local-tx-fns? false
-   :local-routing? false})
+   :local-routing? false
+   :ds-schema ^:derived #(ud/datascript-schema (:schema %))})
 
 (defstate client :start (d/client (:client-cfg config)))
 (defstate conn :start
@@ -44,7 +45,9 @@
              :user/email (claims "email")
              :user/emailVerified (claims "email_verified")}]
         {:keys [db-after] :as result} (d/transact conn {:tx-data tx})
-        datoms (pr-str ((:datoms-for config) db-after uid))]
+        datoms (->> ((:datoms-for config) db-after uid)
+                    (ud/tag-eids (:ds-schema config))
+                    pr-str)]
     {:headers {"Content-Type" "application/edn"}
      :body datoms}))
 
@@ -63,6 +66,8 @@
   (init-config! default-config (ion/get-env))
   (tion/init-config! (select-keys config [:env :app-name]))
 
-  (def handler* (wrap-trident-defaults routes (merge (select-keys config [:origins :uid-opts])
-                                                     {:conn-var #'conn})))
+  (def handler* (wrap-trident-defaults
+                  routes
+                  (merge (select-keys config [:origins :uid-opts])
+                         {:state-var #'conn})))
   (def handler (ionize handler*)))

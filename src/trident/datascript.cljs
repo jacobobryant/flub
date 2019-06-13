@@ -8,11 +8,8 @@
             [cljs-time.coerce :refer [from-date]]
             [clojure.walk :refer [postwalk]]
             [cljs.core.async :refer [<!]])
-  (:require-macros [trident.util :as u]
+  (:require-macros [trident.datascript]
                    [cljs.core.async.macros :refer [go]]))
-
-(u/cljs-import-vars datascript.core
-                    q pull pull-many create-conn db)
 
 (def ^:no-doc registry (atom []))
 
@@ -31,10 +28,9 @@
 
   `datomic-tempids` is a function from tempids in `datascript-tx-result` to
   Datomic EIDs."
-  [datascript-tx-result datomic-tempids]
-  (let [datascript-tempids (dissoc (:tempids tx-result) :db/current-tx)]
-    (u/map-kv #(vector (datascript-tempids %) (datomic-tempids %))
-              (keys datascript-tempids))))
+  [datascript-tx-result datomic-ids]
+  (let [datascript-ids (dissoc (:tempids datascript-tx-result) :db/current-tx)]
+    (u/map-kv (fn [tempid ds-id] [ds-id (datomic-ids tempid)]) datascript-ids)))
 
 ; todo:
 ; - infer new entity ids, replace with strings
@@ -52,6 +48,10 @@
   (and decode) EIDs in this form because Datomic entity IDs can be larger than
   Javascript's `Number.MAX_SAFE_INTEGER`.
 
+  On the backend, include `{trident/eid trident.util/parse-int}` in
+  `data_readers.clj`. On the frontend, include the following when you call
+  `read-string`: `{:readers {'trident/eid #(tagged-literal 'trident/eid %)}}`
+
   Note: currently, if `tx` includes new entities, they must have an explicit
   tempid, e.g. `{:db/id \"tmp\", :foo \"bar\"}` instead of just
   `{:foo \"bar\"}`."
@@ -59,8 +59,8 @@
   (let [tx-result (d/transact! conn tx)]
     (apply invalidate! queries)
     (go (let [tx (ud/translate-eids (:schema @conn) (::eids @conn) tx)
-              datomic-tempids (<! (persist-fn tx))
-              eids (eid-mapping tx-result datomic-tempids)]
+              datomic-ids (<! (persist-fn tx))
+              eids (eid-mapping tx-result datomic-ids)]
           (swap! conn update ::eids merge eids)))
     tx-result))
 
@@ -74,7 +74,8 @@
                 (postwalk #(cond
                              (u/instant? %)                  (from-date %)
                              (and (tagged-literal? %)
-                                  (= (:tag %) 'trident/eid)) (:form %)))
+                                  (= (:tag %) 'trident/eid)) (:form %)
+                             :default %))
                 (map concat (repeat [:db/add])))
         tx-result (d/transact! conn tx)
         eids (eid-mapping tx-result #(tagged-literal 'trident/eid %))]

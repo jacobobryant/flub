@@ -1,9 +1,10 @@
 {:trident/mono
- {:version "0.1.5"
+ {:version "0.1.6"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
-  :aliases {:dev {:extra-deps {trident-repl {:local/root "../repl"}
+  :aliases {:dev {:extra-paths ["../../src-dev"]
+                  :extra-deps {trident-repl {:local/root "../repl"}
                                trident-build {:local/root "../build"}}}}
   :projects
   {repl          {:desc "A handful of convenience functions for use at the repl."
@@ -15,6 +16,9 @@
                   :deps [org.clojure/core.async
                          orchestra
                          com.taoensso/encore]}
+   cljs-http     {:desc "Slight additions to `cljs-http`"
+                  :deps [cljs-http
+                         org.clojure/core.async]}
    cli           {:desc "Makes it easy to define and reuse CLIs for tools.deps-based build tasks."
                   :local-deps [util]
                   :deps [me.raynes/fs
@@ -72,7 +76,7 @@
                          orchestra]
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    frontend      {:desc "Just a bundle of other artifacts."
-                  :local-deps [util datascript views]}
+                  :local-deps [util datascript views cljs-http]}
    web-repl      {:desc "A dev web server for use with `trident/web`."
                   :local-deps [web]
                   :deps [org.immutant/web
@@ -84,7 +88,8 @@
                   :deps [jobryant/mock]
                   :exclude [com.datomic/ion]}}
   :managed-deps
-  {com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
+  {cljs-http {:mvn/version "0.1.46"}
+   com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
    com.datomic/client-cloud {:mvn/version "0.8.71"}
    com.datomic/datomic-free {:mvn/version "0.9.5697"}
    com.datomic/ion {:mvn/version "0.9.28"}
@@ -96,7 +101,7 @@
    deps-deploy {:mvn/version "0.0.9"}
    garden {:mvn/version "1.3.9"}
    hiccup {:mvn/version "1.0.5"}
-   jobryant/mock {:mvn/version "0.0.1-SNAPSHOT"}
+   jobryant/mock {:mvn/version "0.0.1"}
    jobryant/pack {:mvn/version "1.0"}
    me.raynes/fs {:mvn/version "1.4.6"}
    mount {:mvn/version "0.1.15"}

@@ -2,7 +2,7 @@
   "A dev web server for use with [[trident.web]]."
   (:require [trident.util :as u]
             [immutant.web :as imm]
-            [trident.web :as trident]
+            [trident.web :as web]
             [mount.core :as mount :refer [defstate]]
             [datomic.ion.cast :as cast]))
 
@@ -11,7 +11,7 @@
 ; todo specify handler in config
 (defn start-immutant []
   (imm/run
-    trident/handler*
+    web/handler*
     {:port (:port config)}))
 
 (defstate server :start (start-immutant)

@@ -47,7 +47,8 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/web-repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web-repl) (includes `web`). A dev web server for use with `trident/web`.
  - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript) (includes `util`). Frontend tools for syncing Datascript with Datomic.
  - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views) (includes `util`). Some Reagent components and stuff.
- - `trident/frontend` (includes `util`, `datascript`, `views`). Just a bundle of other artifacts.
+ - [`trident/cljs-http`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cljs-http). Slight additions to `cljs-http`
+ - `trident/frontend` (includes `util`, `datascript`, `views`, `cljs-http`). Just a bundle of other artifacts.
 
 Also see [`trident.cli` Getting Started](doc/cli.md).
 
