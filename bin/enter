@@ -1,0 +1,6 @@
+#!/bin/bash
+# use `source bin/enter`
+CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NEW_PATH="$CURDIR:$PATH"
+NEW_PS1="($(basename $(dirname $CURDIR))) $PS1"
+bash --init-file <(echo ". \"$HOME/.bashrc\"; export PATH=\"$NEW_PATH\"; export PS1=\"$NEW_PS1\"")

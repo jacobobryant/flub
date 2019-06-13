@@ -70,4 +70,4 @@
                   routes
                   (merge (select-keys config [:origins :uid-opts])
                          {:state-var #'conn})))
-  (def handler (ionize handler*)))
+  (ionize handler*))

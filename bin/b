@@ -1,3 +1,2 @@
 #!/bin/bash
-# tb - Trident Build, not Tuberculosis
 GRENCH_PORT=7888 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"

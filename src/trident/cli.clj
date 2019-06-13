@@ -13,7 +13,6 @@
   (:require [trident.util :as u]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
-            [clojure.pprint :refer [pprint]]
             [me.raynes.fs :as fs]
             [trident.cli.util :refer [maybe-slurp with-no-shutdown read-deps]]))
 
