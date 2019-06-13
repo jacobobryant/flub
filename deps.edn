@@ -1,5 +1,5 @@
 {:trident/mono
- {:version "0.1.7"
+ {:version "0.1.8-SNAPSHOT"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
@@ -86,7 +86,7 @@
                          org.clojure/tools.namespace]
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    docs          {:local-deps [repl util cli build datascript ring firebase
-                               views datomic-cloud ion web web-repl]
+                               views datomic-cloud ion web web-repl ion-dev]
                   :deps [jobryant/mock]
                   :exclude [com.datomic/ion]}}
   :managed-deps
