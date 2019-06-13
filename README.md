@@ -37,6 +37,7 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.repl). A handful of convenience functions for use at the repl.
  - [`trident/util`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.util). A collection of utility functions & macros.
  - [`trident/cli`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cli) (includes `util`). Makes it easy to define and reuse CLIs for tools.deps-based build tasks.
+ - [`trident/ion-dev`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion-dev) (includes `cli`). Stuff for ion develeopment
  - [`trident/build`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.build) (includes `util`, `cli`). A collection of build tasks made with `trident/cli`.
  - [`trident/datomic`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic) (includes `util`). Janky file-based persistence for Datomic Free.
  - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud) (includes `util`). Tools for Datomic Cloud.
@@ -58,6 +59,10 @@ While I hope Trident will be useful for others, I'm primarily focusing on my own
 use cases because 1) there are things I want to build, 2) developing Trident as
 I build real things will help to make sure it's actually useful. With that out
 of the way, if you're interested in anything Trident does, I'd love to chat.
+
+Projects using Trident:
+
+ - [FlexBudget](https://github.com/jacobobryant/flexbudget), a [flexible budgeting app](https://notjust.us).
 
 ## Contact
 
