@@ -1,5 +1,6 @@
 (ns user
-  (:require [trident.repl :as repl]))
+  (:require [trident.repl :as repl]
+            [clojure.test :as t]))
 
-(def init repl/init)
-(defmacro refresh [] `(repl/refresh nil))
+(defmacro refresh [] `(repl/refresh))
+(defn init [] (repl/init) (refresh))

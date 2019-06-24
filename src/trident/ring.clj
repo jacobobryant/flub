@@ -1,10 +1,9 @@
 (ns trident.ring
   "Some Ring middleware"
-  (:require [taoensso.timbre :refer [error debug]]
-            [mount.core :as mount]
-            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
-            [ring.middleware.format-params :refer [wrap-clojure-params]]
-            [ring.middleware.cors :refer [wrap-cors]]))
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.walk :as walk]
+            [taoensso.timbre :refer [error debug]]
+            [mount.core :as mount]))
 
 (defn wrap-uid
   "Authenticates the request, or gives a 401 response.
@@ -38,47 +37,30 @@
            {:status 500}))))
 
 (defn wrap-mount
-  "Ensures that `mount.core/start` has been called.
-
-  `state-var`: the var of a mount component, used for checking if mount has been
-  started already."
-  [handler state-var]
-  (fn [req]
-    (when (contains? #{mount.core.NotStartedState mount.core.DerefableState} (type @state-var))
-      (debug {:msg "Started mount" :result (mount/start)}))
-    (handler req)))
-
-(defn wrap-debug-requests
-  "Logs requests and responses with `taonsso.timbre/debug`."
+  "Ensures that `mount.core/start` has been called."
   [handler]
   (fn [req]
-    (debug {:msg "got request" :uri (:uri req)})
-    (let [response (handler req)]
-      (debug {:msg "request response"
-              :request-params (:params req)
-              :response-body (:body response)})
-      response)))
+    (mount/start)
+    (handler req)))
 
-(defn wrap-trident-defaults
-  "Wraps `handler` with a bunch of middleware.
+(defn wrap-request [handler & fs]
+  (apply comp handler fs))
 
-  Includes all the middleware in this namespace, plus
-  `ring.middleware.cors/wrap-cors`,
-  `ring.middleware.format-params/wrap-clojure-params` and
-  `ring.middleware.defaults/wrap-defaults` (with `api-defaults`).
-
-   - `uid-opts`: see [[wrap-uid]]
-   - `state-var`: see [[wrap-mount]]
-   - `origins`: passed to `wrap-cors` for `:access-control-allow-origin`"
-  [handler {:keys [uid-opts state-var origins]}]
-  (-> handler
-      (wrap-uid uid-opts)
-      wrap-debug-requests
-      (wrap-cors
-        :access-control-allow-origin origins
-        :access-control-allow-methods [:get :post]
-        :access-control-allow-headers ["Authorization" "Content-Type"])
-      wrap-clojure-params
-      (wrap-defaults api-defaults)
-      (wrap-mount state-var)
-      wrap-catchall))
+(defn wrap-debug
+  "Logs requests and responses with `taonsso.timbre/debug`."
+  ([handler {:keys [exclude]}]
+   (let [shorten (fn [x]
+                   (->> (apply dissoc x exclude)
+                        (walk/postwalk #(if (vector? %) (vec (take 10 %)) %))))]
+     (fn [req]
+       (def req req)
+       (println "request:")
+       (pprint (shorten req))
+       (let [response (handler req)]
+         (def response response)
+         (println "\nresponse:")
+         (pprint (shorten response))
+         (println)
+         response))))
+  ([handler]
+   (wrap-debug handler nil)))

@@ -24,19 +24,39 @@
                  :ion {:enabled? true
                        :fn ion-appender}}}))
 
-(u/defconfig
-  {:path (fn [env] (format "/datomic-shared/%s/%s/"
-                           env (:app-name config)))})
+(defprotocol Params
+  "Intended for retrieving secrets."
+  (get-params [config env])
+  (get-path [config env])
+  (get-param [config k]))
 
-(def ^{:doc "Wrapper for `datomic.ion/get-params`"}
-  get-params (memoize #(-> {:path ((:path config) %)}
-                           ion/get-params
-                           keywordize-keys)))
+(def get-params-memoized
+  (memoize
+    (fn [this env]
+      (keywordize-keys (ion/get-params {:path (get-path this env)})))))
 
-(defn get-param
-  "Wrapper for [[get-params]]."
-  [k]
-  (->> [(name (:env config)) "default"]
-       (map #(get (get-params %) k))
-       (filter some?)
-       first))
+(defrecord ParamClient [app-name env]
+  Params
+  (get-params [this env]
+    (get-params-memoized this env))
+  (get-path [this env]
+    (format "/datomic-shared/%s/%s/" (name env) app-name))
+  (get-param [this k]
+    (->> [env :default]
+         (map #(get (get-params this %) k))
+         (filter some?)
+         first)))
+
+(defn default-config
+  "Returns a client config map that's probably good enough for most people.
+
+  If `system-name` is omited, it will be read from the `:app-name` key of your
+  `datomic/ion-config.edn` file."
+  ([system-name]
+   {:system system-name
+    :endpoint (str "http://entry." system-name ".us-east-1.datomic.net:8182/")
+    :server-type :ion
+    :region "us-east-1"
+    :proxy-port 8182})
+  ([]
+   (default-config (:app-name (u/read-config "datomic/ion-config.edn")))))

@@ -14,7 +14,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
             [me.raynes.fs :as fs]
-            [trident.cli.util :refer [maybe-slurp with-no-shutdown]]))
+            [trident.cli.util :refer [with-no-shutdown]]))
 
 (defn description
   "Returns `cli`'s description as a seq of lines.

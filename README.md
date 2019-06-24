@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.1.9"}
+trident/<artifact> {:mvn/version "0.1.10"}
 ```
 
 # Trident
@@ -45,7 +45,6 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/firebase`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firebase). Functions for authenticating Firebase user tokens.
  - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion) (includes `util`). Utilities for working with Datomic Ions
  - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web) (includes `util`, `datomic-cloud`, `firebase`, `ion`, `ring`). Highly contrived web framework.
- - [`trident/web-repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web-repl) (includes `web`). A dev web server for use with `trident/web`.
  - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript) (includes `util`). Frontend tools for syncing Datascript with Datomic.
  - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views) (includes `util`). Some Reagent components and stuff.
  - [`trident/cljs-http`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cljs-http). Slight additions to `cljs-http`

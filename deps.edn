@@ -1,10 +1,11 @@
 {:trident/mono
- {:version "0.1.9"
+ {:version "0.1.10"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
   :aliases {:dev {:extra-paths ["../../src-dev"]
-                  :extra-deps {trident-build {:local/root "../build"}}}}
+                  :extra-deps {trident-build {:local/root "../build"}}}
+            :test {:extra-paths ["../../test"]}}
   :projects
   {repl          {:desc "A handful of convenience functions for use at the repl."
                   :deps [org.clojure/tools.namespace
@@ -12,8 +13,7 @@
                          nrepl]}
    util          {:desc "A collection of utility functions & macros."
                   :deps [org.clojure/core.async
-                         orchestra
-                         com.taoensso/encore]}
+                         orchestra]}
    cljs-http     {:desc "Slight additions to `cljs-http`"
                   :deps [cljs-http
                          org.clojure/core.async]}
@@ -35,10 +35,7 @@
                          org.clojure/tools.deps.alpha]}
    ring          {:desc "Some Ring middleware."
                   :deps [com.taoensso/timbre
-                         mount
-                         ring/ring-defaults
-                         ring-cors
-                         ring-middleware-format]}
+                         mount]}
    firebase      {:desc "Functions for authenticating Firebase user tokens."
                   :deps [com.google.firebase/firebase-admin]}
    views         {:desc "Some Reagent components and stuff."
@@ -53,7 +50,10 @@
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    ion-dev       {:desc "Stuff for ion development."
                   :local-deps [cli]
-                  :deps [com.datomic/ion-dev]
+                  :deps [com.datomic/ion-dev
+                         com.datomic/ion
+                         org.immutant/web
+                         mount]
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    datascript    {:desc "Frontend tools for syncing Datascript with Datomic."
                   :local-deps [util]
@@ -75,16 +75,14 @@
                   :deps [com.datomic/client-cloud
                          mount
                          com.datomic/ion
-                         orchestra]
+                         ring/ring-defaults
+                         ring-cors
+                         ring-middleware-format
+                         orchestra
+                         metosin/reitit-ring]
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    frontend      {:desc "Just a bundle of other artifacts."
                   :local-deps [util datascript views cljs-http]}
-   web-repl      {:desc "A dev web server for use with `trident/web`."
-                  :local-deps [web]
-                  :deps [org.immutant/web
-                         nrepl
-                         org.clojure/tools.namespace]
-                  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
    docs          {:local-deps [repl util cli build datascript ring firebase
                                views datomic-cloud ion web web-repl ion-dev]
                   :deps [jobryant/mock]
@@ -98,7 +96,6 @@
    com.datomic/ion-dev {:mvn/version "0.9.186"}
    com.github.jnr/jnr-posix {:mvn/version "3.0.49"}
    com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
-   com.taoensso/encore {:mvn/version "2.112.0"}
    com.taoensso/timbre {:mvn/version "4.10.0"}
    datascript {:mvn/version "0.18.2"}
    deps-deploy {:mvn/version "0.0.9"}
@@ -107,6 +104,7 @@
    jobryant/mock {:mvn/version "0.0.2"}
    jobryant/pack {:mvn/version "1.0"}
    me.raynes/fs {:mvn/version "1.4.6"}
+   metosin/reitit-ring {:mvn/version "0.3.7"}
    mount {:mvn/version "0.1.15"}
    net.java.dev.jna/jna {:mvn/version "5.3.1"}
    nrepl {:mvn/version "0.6.0"}
