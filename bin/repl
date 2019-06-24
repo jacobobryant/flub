@@ -1,2 +1,2 @@
 #!/bin/bash
-clj -Adev -e "(init)" -r
+clj -Adev "$@" -e "(init)" -r

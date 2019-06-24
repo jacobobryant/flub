@@ -5,11 +5,11 @@
             [clojure.pprint]
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
-            [taoensso.encore :as enc]
  #?@(:cljs [[goog.string :as gstring]
             [goog.string.format]
             [cljs.core.async :refer [<! put! chan close!]]]
-      :clj [[clojure.reflect :refer [reflect]]]))
+      :clj [[clojure.reflect :refer [reflect]]
+            [clojure.java.io :as io]]))
   #?(:cljs (:require-macros trident.util)))
 
 (def pprint clojure.pprint/pprint)
@@ -18,14 +18,60 @@
   (if (f x) (g x) x))
 
 (defn derive-config
-  "Replaces any `^:derived` values in `m`. See [[defconfig]]."
+  "Replaces any `^:derived` values in `m`.
+
+  Example:
+  ```
+  (def m
+    {:first-name \"John\"
+     :last-name  \"Doe\"
+     :full-name ^:derived #(str (get-config % :first-name) \" \"
+                                (get-config % :last-name))})
+
+  (derive-config m)
+  => {:first-name \"John\" :last-name  \"Doe\" :full-name \"John Doe\"}
+  ```
+  Any values with a truthy `:derived` metadata value must be single-argument
+  functions. These functions will be replaced with their return values, with
+  the config map as the argument.
+
+  `get-config` is like `get`, but if the return value is a `:derived` function,
+  `get-config` will derive it before returning. It should be used within
+  `:derived` function as in the example "
   [m]
   (postwalk #(if (:derived (meta %)) (% m) %) m))
+
+(defn get-in-config
+  "See [derive-config]."
+  ([m ks not-found]
+   (let [x (get-in m ks not-found)]
+     (if (:derived (meta x))
+       (x m)
+       x)))
+  ([m ks]
+   (get-in-config m ks nil)))
+
+(defn get-config
+  "See [derive-config]."
+  ([m k not-found]
+   (get-in-config m [k] not-found))
+  ([m k]
+   (get-config m k nil)))
 
 (defn ^:no-doc text-rows [lines]
   (str/join \newline (remove nil? (flatten lines))))
 
 #?(:clj (do
+
+(defn maybe-slurp
+  "Attempts to slurp `f`, returning nil on failure"
+  [f]
+  (try
+    (slurp f)
+    (catch Exception e nil)))
+
+(defn read-config [filename]
+  (some-> filename io/resource maybe-slurp read-string))
 
 (defmacro capture [& xs]
   `(do ~@(for [x xs] `(def ~x ~x))))
@@ -166,37 +212,6 @@
                           (~parent-method
                             ~parent-instance
                             ~@(rest arglist))))))]))))
-
-(defmacro defconfig
-  "Defines `config` and `init-config!` vars.
-
-  Example:
-  ```
-  (defconfig
-    {:first-name \"John\"
-     :last-name  \"Doe\"
-     :full-name ^:derived #(str (:first-name %) \" \" (:last-name %))})
-
-  config
-  => {:first-name \"John\" :last-name  \"Doe\" :full-name \"John Doe\"}
-
-  (init-config! {:first-name \"Jane\"})
-  config
-  => {:first-name \"Jane\" :last-name  \"Doe\" :full-name \"Jane Doe\"}
-  ```
-  `default` is a map. Any values with a truthy `:derived` metadata value must
-  be single-argument functions. These functions will be replaced with their return
-  values, with the config map as the argument.
-
-  `init-config!` takes any number of maps and merges them onto the provided config
-  map using `taoensso.encore/nested-merge`, deriving values afterward."
-  [default]
-  `(do
-     (def ~'config (derive-config ~default))
-     (defn ~'init-config! [& ms#]
-       (let [c# (apply enc/nested-merge ~default ms#)
-             c# (derive-config c#)]
-         (def ~'config c#)))))
 
 (defmacro text
   "Generates a string from pairs of conditions and lines of text.

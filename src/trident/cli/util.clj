@@ -28,13 +28,6 @@
   [file x]
   (spit file (with-out-str (pprint x))))
 
-(defn maybe-slurp
-  "Attempts to slurp `f`, returning nil on failure"
-  [f]
-  (try
-    (slurp f)
-    (catch Exception e nil)))
-
 (defn rmrf
   "Delete recursively without following symlinks, like `rm -rf`"
   [f]

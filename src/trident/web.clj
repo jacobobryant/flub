@@ -2,72 +2,64 @@
   "Highly contrived web framework.
 
   Great for making websites that look exactly like the one I made with this."
-  (:require [trident.util :as u]
-            [trident.util.datomic :as ud]
-            [trident.ring :refer [wrap-trident-defaults]]
-            [trident.datomic-cloud.txauth :as txauth]
-            [trident.datomic-cloud.client :refer [connect]]
-            [trident.firebase :refer [verify-token]]
-            [trident.ion :as tion]
-            [datomic.ion :as ion]
+  (:require [clojure.spec.alpha :as s]
             [datomic.client.api :as d]
-            [clojure.spec.alpha :as s]
-            [mount.core :refer [defstate start]]
             [orchestra.core :refer [defn-spec]]
-            [datomic.ion.lambda.api-gateway :refer [ionize]]))
+            [reitit.ring :as reitit]
+            [ring.middleware.cors :as cors]
+            [ring.middleware.defaults :as defaults]
+            [ring.middleware.format-params :as fmt-params]
+            [trident.datomic-cloud :as tcloud]
+            [trident.datomic-cloud.txauth :as txauth]
+            [trident.firebase :as firebase]
+            [trident.ion :as tion]
+            [trident.ring :as tring]
+            [trident.util.datomic :as ud]))
 
-(s/def ::config (s/keys :req-un [::env ::app-name]))
+(s/def ::config (s/keys :req-un [::env ::app-name ::schema ::db-name
+                                 ::origins ::datoms-for ::authorizers]
+                        :opt-un [::local-tx-fns?]))
 
-(u/defconfig
-  {:uid-opts {:verify-token (fn [token] (verify-token token #(tion/get-param :firebase-key)))}
-   :env :dev
-   :db-name "dev"
-   :client-cfg {:system ^:derived #(:app-name %)
-                :endpoint ^:derived #(str "http://entry." (:app-name %)
-                                          ".us-east-1.datomic.net:8182/")
-                :server-type :ion
-                :region "us-east-1"
-                :proxy-port 8182}
-   :local-tx-fns? false
-   :local-routing? false
-   :ds-schema ^:derived #(ud/datascript-schema (:schema %))})
+(defn verify-token [param-client token]
+  (->> :firebase-key
+       (tion/get-param param-client)
+       (firebase/verify-token token)))
 
-(defstate client :start (d/client (:client-cfg config)))
-(defstate conn :start
-  (do
-    (d/create-database client (select-keys config [:db-name]))
-    (let [conn (connect client (select-keys config [:db-name :local-tx-fns?]))]
-      (d/transact conn {:tx-data (ud/datomic-schema (:schema config))})
-      conn)))
-
-(defn init-handler [{:keys [claims uid] :as req}]
+(defn init-handler [{:keys [conn datoms-for ds-schema claims uid] :as req}]
   (let [tx [{:user/uid uid
              :user/email (claims "email")
              :user/emailVerified (claims "email_verified")}]
         {:keys [db-after] :as result} (d/transact conn {:tx-data tx})
-        datoms (->> ((:datoms-for config) db-after uid)
-                    (ud/tag-eids (:ds-schema config))
+        datoms (->> (datoms-for db-after uid)
+                    (ud/tag-eids ds-schema)
                     pr-str)]
     {:headers {"Content-Type" "application/edn"}
      :body datoms}))
 
-; replace with reitit
-(defn routes [req]
-  (case (:uri req)
-    "/init" (init-handler req)
-    "/tx" (txauth/handler
-            (merge req
-                   {:conn conn
-                    :authorizers (:authorizers config)}))))
+(defn-spec start any? [{:keys [origins schema datoms-for] :as config} ::config]
+  (let [param-client (tion/map->ParamClient (select-keys config [:app-name :env]))
+        conn (tcloud/init-conn (assoc config :client-cfg (tion/default-config)))
+        ds-schema (ud/datascript-schema schema)]
+    (reitit/ring-handler
+      (reitit/router
+        [["/init" {:get init-handler
+                   :name ::init}]
+         ["/tx" {:post txauth/handler
+                 :name ::tx}]]
+        {:data {:middleware [tring/wrap-catchall
+                             [defaults/wrap-defaults defaults/api-defaults]
+                             fmt-params/wrap-clojure-params
+                             [cors/wrap-cors
+                              :access-control-allow-origin origins
+                              :access-control-allow-methods [:get :post]
+                              :access-control-allow-headers ["Authorization" "Content-Type"]]
+                             [tring/wrap-uid
+                              {:verify-token (partial verify-token param-client)}]
+                             [tring/wrap-request
+                              #(merge % (select-keys config [:datoms-for :authorizers])
+                                      {:conn conn
+                                       :ds-schema ds-schema})]]}}))))
 
-(defn-spec init! any? [default-config ::config]
+(defn init! [config]
   (tion/set-timbre-ion-appender!)
-
-  (init-config! default-config (ion/get-env))
-  (tion/init-config! (select-keys config [:env :app-name]))
-
-  (def handler* (wrap-trident-defaults
-                  routes
-                  (merge (select-keys config [:origins :uid-opts])
-                         {:state-var #'conn})))
-  (ionize handler*))
+  (start config))

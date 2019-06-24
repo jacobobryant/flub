@@ -12,15 +12,15 @@
 
   Recommended usage: define a `refresh` macro in the `user` namespace that
   delegates to this."
-  [args]
-  `(do (apply tn/refresh ~args)
+  [& args]
+  `(do (tn/refresh ~@args)
        (use 'clojure.repl)
        :ready))
 
 (defn init
   "One-time init code for calling after opening the repl."
   ([] (init {}))
-  ([{:keys [nrepl-port refresh-args] :or {nrepl-port 7888}}]
+  ([{:keys [nrepl-port] :or {nrepl-port 7888}}]
    (st/instrument)
    (nrepl/start-server :port nrepl-port)
-   (refresh refresh-args)))
+   (println "Started nrepl server on port" nrepl-port)))

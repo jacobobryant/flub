@@ -5,6 +5,7 @@
            [com.google.firebase FirebaseApp FirebaseOptions$Builder]
            com.google.auth.oauth2.GoogleCredentials))
 
+; TODO make this reloadable
 (defn init-firebase!
   "Calls `com.google.firebase.FirebaseApp/initializeApp`.
 
@@ -22,13 +23,13 @@
 (defn verify-token
   "Verifies a firebase token, returning a map of the claims.
 
-  `get-key`: a zero-argument function which returns your Firebase private key
-  (a string).
+  `token`: the user's auth token.
+  `firebase-key`: the contents of your `*-firebase-adminsdk-*.json` file (a string)
 
   If needed, calls [[init-firebase!]]. Returns `nil` if `token` is invalid."
-  [token get-key]
+  [token firebase-key]
   (when (= 0 (count (FirebaseApp/getApps)))
-    (init-firebase! (get-key)))
+    (init-firebase! firebase-key))
   (try
     (into {}
           (-> (FirebaseAuth/getInstance)
