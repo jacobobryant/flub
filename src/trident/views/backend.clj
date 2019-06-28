@@ -21,4 +21,4 @@
 (defview ^{:doc "Returns a hiccup p element with a max width of 450px."}
   p
   [opts & contents]
-  (into [:p.mx-auto (update opts :style #(merge {:max-width "450px"} %))] contents))
+  (into [:p (update opts :style #(merge {:max-width "450px"} %))] contents))
