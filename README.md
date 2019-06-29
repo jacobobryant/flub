@@ -62,6 +62,7 @@ of the way, if you're interested in anything Trident does, I'd love to chat.
 Projects using Trident:
 
  - [FlexBudget](https://github.com/jacobobryant/flexbudget), a [flexible budgeting app](https://notjust.us).
+ - [Lagukan](https://lagukan.com), a music recommendation service.
 
 ## Contact
 
