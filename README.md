@@ -26,7 +26,7 @@ information about my philosophy.
 ## Contents
 
 I keep the code in a single `src` dir, but I provide multiple artifacts. Any
-code in `src/trident/<foo>` is available in the `tridnet/<foo>` artifact. For
+code in `src/trident/<foo>` is available in the `trident/<foo>` artifact. For
 example, `{trident/cli {:mvn/version "<version>"}}` will give you access to the
 `trident.cli` namespace. All artifacts use the same version.
 
