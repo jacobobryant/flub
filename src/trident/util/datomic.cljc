@@ -6,7 +6,7 @@
             [clojure.spec.alpha :as s]
             [trident.util :as u]
             [orchestra.core :refer [defn-spec]]
-            [clojure.set :refer [difference]]))
+            [clojure.set :refer [difference intersection]]))
 
 (defn expand-flags
   "Generate Datomic schema from a collection of flags.
@@ -53,10 +53,10 @@
   ```"
   [compact-schema]
   (map (fn [[ident flags]]
-         (expand-flags
-           (concat {:db/ident ident
-                    :db/cardinality :db.cardinality/one}
-                   flags)))
+         (let [m (merge {:db/ident ident} (expand-flags flags))]
+           (if (and (contains? m :db/valueType) (not (contains? m :db/cardinality)))
+             (assoc m :db/cardinality :db.cardinality/one)
+             m)))
        compact-schema))
 
 (defn datascript-schema
@@ -69,6 +69,30 @@
                        (not= (:db/valueType x) :db.type/ref) (dissoc x :db/valueType))]))
        (remove (comp empty? second))
        (into {})))
+
+(defn composite-keys [m]
+  ; assert no subset keys
+  (u/map-kv (fn [k v] [k [:db.type/tuple :db.unique/identity [:db/tupleAttrs v]]]) m))
+
+(defn specs [m]
+  (u/map-kv (fn [k v] [k [[:db.entity/attrs v]]]) m))
+
+(defmacro defspecs [sym m]
+  `(do
+     ~@(for [[k v] m]
+         `(s/def ~k (s/keys :req ~v)))
+     (def ~sym (specs ~m))))
+
+(defn ephemeral [m]
+  (u/map-kv (fn [k v] [k (conj v :db/noHistory)]) m))
+
+(defn merge-schema [& ms]
+  (when-not (->> ms
+                 (map (comp set keys))
+                 (apply intersection)
+                 empty?)
+    (throw (ex-info "schemas have shared keys" {})))
+  (apply merge ms))
 
 (defn tag-eids
   "Convert all EIDs in `datoms` to tagged literals.

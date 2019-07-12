@@ -277,6 +277,23 @@
 (defn map-kv [f m]
   (into {} (map (fn [[k v]] (f k v)) m)))
 
+(defn map-keys [f m]
+  (map-kv (fn [k v] [(f k) v]) m))
+
+(defn map-vals [f m]
+  (map-kv (fn [k v] [k (f v)]) m))
+
+(defn map-from-to [f g xs]
+  (->> xs
+       (map (juxt f g))
+       (into {})))
+
+(defn map-from [f xs]
+  (map-from-to f identity xs))
+
+(defn map-to [f xs]
+  (map-from-to identity f xs))
+
 (defn doclines
   "Returns the docstring of a var as a collection of lines, removing indentation."
   [_var]

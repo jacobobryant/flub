@@ -1,5 +1,6 @@
 (ns trident.datomic-cloud
   (:require [datomic.client.api :as d]
+            [trident.util :as u]
             [trident.util.datomic :as ud]
             [trident.datomic-cloud.client :as client]))
 
@@ -22,8 +23,14 @@
   ([config]
    (init-conn (d/client (:client-cfg config)) config)))
 
-(defn pull-many [db pull-expr eids]
-  (flatten
-    (d/q [:find (list 'pull '?e pull-expr)
-          :in '$ '[?e ...]]
-         db eids)))
+(defn pull-many
+  "Ordering is not preserved. If `map-from-key` is provided, returns a map. See
+  [[trident.util/map-from]]. nil keys are `dissoc`-ed."
+  ([db pull-expr eids]
+   (flatten
+     (d/q [:find (list 'pull '?e pull-expr)
+           :in '$ '[?e ...]]
+          db eids)))
+  ([db pull-expr map-from-key eids]
+   (let [result (u/map-from map-from-key (pull-many db pull-expr eids))]
+     (dissoc result nil))))
