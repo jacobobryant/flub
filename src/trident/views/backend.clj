@@ -22,3 +22,15 @@
   p
   [opts & contents]
   (into [:p (update opts :style #(merge {:max-width "450px"} %))] contents))
+
+(defn youtube [opts]
+  [:iframe (merge
+             {:width "560"
+              :height "315"
+              :style {:border-width "1px"
+                      :border-style "solid"
+                      :border-color "black"}
+              :frameborder "0"
+              :allow "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+              :allowfullscreen true}
+             opts)])
