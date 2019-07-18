@@ -331,3 +331,7 @@
     (->> rows
          (map #(apply (partial format fmt) %))
          (map str/trimr))))
+
+(defn split-by [pred xs]
+  (reduce #(update %1 (if (pred %2) 0 1) (fnil conj []) %2)
+          [nil nil] xs))
