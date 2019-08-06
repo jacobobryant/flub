@@ -335,3 +335,36 @@
 (defn split-by [pred xs]
   (reduce #(update %1 (if (pred %2) 0 1) (fnil conj []) %2)
           [nil nil] xs))
+
+(defn print-table
+  "Prints a nicely formatted table.
+
+  Example:
+  ```
+  (print-table
+    [[:foo \"Foo\"] [:bar \"Bar\"]]
+    [{:foo 1 :bar 2} {:foo 3 :bar 4}])
+  => Foo  Bar
+     1    2
+     3    4
+  ```"
+  [header-info table]
+  (let [[ks header] (apply map vector header-info)
+        header (map #(str % "  ") header)
+        body (->> table
+                  (map (apply juxt ks))
+                  (map (fn [row] (map #(str % "  ") row))))
+        rows (concat [header] body)]
+    (doseq [row (format-columns rows)]
+      (println row))))
+
+(defn round
+  ([t places]
+   (let [factor (Math/pow 10 places)]
+     (float (/ (int (* factor t)) factor))))
+  ([t] (round t 1)))
+
+(defn avg [xs]
+  (if (empty? xs)
+    0
+    (/ (reduce + xs) (count xs))))
