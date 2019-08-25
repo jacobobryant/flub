@@ -6,7 +6,7 @@
   making build tasks easily reusable (including tasks not defined using
   `trident.cli`).
 
-  See [[_cli_format]].
+  See [[_cli_format]] for general usage.
   Most of the time, the only thing you'll need from this namespace is
   [[defmain]]. See the [[trident.build]] source for some non-contrived example
   usage."
@@ -110,13 +110,14 @@
                                             (validate-args cli args)
                                             {:args args})
         code (cond
-               exit-msg  (do (println exit-msg) code)
-               (some? f) (with-no-shutdown (apply (cond-> f process? (partial opts)) args))
-               :default  (let [[cmd & args] args
-                               cli (get subcommands cmd)]
-                           (if (some? cli)
-                             (dispatch cli args)
-                             (do (println "Subcommand not recognized:" cmd) 1))))]
+               exit-msg      (do (println exit-msg) code)
+               (some? f)     (with-no-shutdown (apply (cond-> f process? (partial opts)) args))
+               (empty? args) (do (dispatch cli ["--help"]) 1)
+               :default      (let [[cmd & args] args
+                                   cli (get subcommands cmd)]
+                               (if (some? cli)
+                                 (dispatch cli args)
+                                 (do (println "Subcommand not recognized:" cmd) 1))))]
     (if (integer? code) code 0)))
 
 (defn main-fn
@@ -209,7 +210,7 @@ tasks.
 
  - `:options`: see above.
 
- - `:option-keys`: a seq of keys in the `:options` map This defines which
+ - `:option-keys`: a seq of keys in the `:options` map. This defines which
    options are actually used for this command. `--edn` and `--help` options
    will be added automatically unless `:fn` does its own CLI processing.
    See [[validate-args]] and [[cli-processing?]].
