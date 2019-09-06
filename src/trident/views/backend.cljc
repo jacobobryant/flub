@@ -1,6 +1,6 @@
 (ns trident.views.backend
   "Helper functions for working with hiccup"
-  (:require [trident.views :refer [defview]]))
+  (:require [trident.views.macros :refer [defview]]))
 
 (defn gap
   "Returns a 10px (by default) hiccup div."

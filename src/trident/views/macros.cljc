@@ -1,9 +1,11 @@
-(ns trident.views
-  "Utilities for working with frontend views.")
+(ns trident.views.macros
+  #?(:cljs (:require-macros [trident.views.macros :refer [defview]])))
 
 (defn ^:no-doc get-opts [args]
   (cond-> args
     (-> args first map? not) (conj nil)))
+
+#?(:clj
 
 (defmacro defview
   "Defines a function that optionally takes a map as the first argument.
@@ -22,3 +24,5 @@
   `(defn ~f [& args#]
      (let [[~opts ~@args] (get-opts args#)]
        ~@forms)))
+
+)

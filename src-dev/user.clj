@@ -3,4 +3,4 @@
             [clojure.test :as t]))
 
 (defmacro refresh [] `(repl/refresh))
-(defn init [] (repl/init) (refresh))
+(defn init [] (repl/init {:nrepl-port 7800}) (refresh))

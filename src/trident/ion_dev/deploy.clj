@@ -41,9 +41,10 @@
   {:fn #'deploy
    :desc ["Deploys a Datomic Cloud Ion."]
    :options {:uname ["-u" "UNAME" "A uname for pushing"]
+             :rev ["-r" "REV" "Rev for pushing"]
              :exclude ["-e" "DEPS" "A colon-separated list of dependency conflicts to ignore"
                        :parse-fn #(map symbol (str/split % #":"))]}
-   :option-keys [:uname :exclude]
+   :option-keys [:rev :uname :exclude]
    :config :trident/ion
    :prog "clj -m trident.ion.build"})
 
