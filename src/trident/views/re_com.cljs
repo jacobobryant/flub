@@ -67,26 +67,3 @@ Example:
   "Like `re-com.core/gap`, but with a default `:size` of `10px`."
   [& {:as props}]
   (reduce into [rc/gap] (merge {:size "10px"} props)))
-
-(defn case
-  "Similar to `clojure.core/case`, but wraps the values in divs.
-
-  Values that aren't displayed will still be returned, but they'll be wrapped
-  in a div with `:display \"none\"` for performance.
-
-  Example:
-  ```
-  (def tab (reagent.core/ratom ::tab-1))
-  (case @tab
-    ::tab-1 [:p \"tab 1\"]
-    ::tab-2 [:p \"tab 2\"])
-  => [:div
-       (^{:key ::tab-1} [:div [:p \"tab 1\"]]
-        ^{:key ::tab-2} [:div {:style {:display \"none\"}}
-                              [:p \"tab 2\"]])]
-  ```"
-  [x & clauses]
-  [:div
-   (for [[x' component] (partition 2 clauses)]
-     ^{:key x'} [:div (when (not= x x') {:style {:display "none"}})
-                 component])])
