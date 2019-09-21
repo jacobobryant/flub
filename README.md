@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.1.16"}
+trident/<artifact> {:mvn/version "0.1.17"}
 ```
 
 # Trident
