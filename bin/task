@@ -1,2 +1,2 @@
 #!/bin/bash
-GRENCH_PORT=7888 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"
+GRENCH_PORT=7800 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"
