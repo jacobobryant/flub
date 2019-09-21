@@ -102,7 +102,9 @@
 (defmacro js<!
   "Like `<!` but for js promises. See [[to-chan]]."
   [form]
-  `(cljs.core.async/<! (to-chan ~form)))
+  `(let [ret# (cljs.core.async/<! (to-chan ~form))]
+     (when (not= ret# ::nil)
+       ret#)))
 
 (defmacro for-every? [& forms]
   `(every? boolean (for ~@forms)))
@@ -248,7 +250,7 @@
   If the promise throws an error, logs to the console and closes the channel."
   [p]
   (let [c (chan)]
-    (.. p (then #(put! c %))
+    (.. p (then #(put! c (if (some? %) % ::nil)))
         (catch #(do
                   (.error js/console %)
                   (close! c))))
