@@ -1,5 +1,5 @@
 {:trident/mono
- {:version "0.1.17"
+ {:version "0.1.18"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
@@ -14,6 +14,9 @@
    util          {:desc "A collection of utility functions & macros."
                   :deps [org.clojure/core.async
                          orchestra]}
+   staticweb     {:desc "Tools for making static websites"
+                  :deps [garden
+                         hiccup]}
    cljs-http     {:desc "Slight additions to `cljs-http`"
                   :deps [cljs-http
                          org.clojure/core.async]}
@@ -39,10 +42,8 @@
    firebase      {:desc "Functions for authenticating Firebase user tokens."
                   :deps [com.google.firebase/firebase-admin]}
    views         {:desc "Some Reagent components and stuff."
-                  :local-deps [util]
-                  :deps [hiccup
-                         re-com
-                         garden]}
+                  :local-deps [util staticweb]
+                  :deps [re-com]}
    ion           {:desc "Utilities for working with Datomic Ions"
                   :local-deps [util cli]
                   :deps [com.datomic/ion
@@ -84,7 +85,7 @@
    frontend      {:desc "Just a bundle of other artifacts."
                   :local-deps [util datascript views cljs-http]}
    docs          {:local-deps [repl util cli build datascript ring firebase
-                               views datomic-cloud ion web web-repl ion-dev]
+                               views datomic-cloud ion web ion-dev]
                   :deps [jobryant/mock]
                   :exclude [com.datomic/ion com.datomic/ion-dev]}}
   :managed-deps

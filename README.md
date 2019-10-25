@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.1.17"}
+trident/<artifact> {:mvn/version "0.1.18"}
 ```
 
 # Trident
@@ -37,7 +37,7 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.repl). A handful of convenience functions for use at the repl.
  - [`trident/util`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.util). A collection of utility functions & macros.
  - [`trident/cli`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cli) (includes `util`). Makes it easy to define and reuse CLIs for tools.deps-based build tasks.
- - [`trident/ion-dev`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion-dev) (includes `cli`). Stuff for ion development
+ - [`trident/ion-dev`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion-dev) (includes `cli`). Stuff for ion development.
  - [`trident/build`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.build) (includes `util`, `cli`). A collection of build tasks made with `trident/cli`.
  - [`trident/datomic`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic) (includes `util`). Janky file-based persistence for Datomic Free.
  - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud) (includes `util`). Tools for Datomic Cloud.
@@ -45,6 +45,7 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/firebase`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firebase). Functions for authenticating Firebase user tokens.
  - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion) (includes `util`). Utilities for working with Datomic Ions
  - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web) (includes `util`, `datomic-cloud`, `firebase`, `ion`, `ring`). Highly contrived web framework.
+ - [`trident/staticweb`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.staticweb). Tools for making static websites
  - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript) (includes `util`). Frontend tools for syncing Datascript with Datomic.
  - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views) (includes `util`). Some Reagent components and stuff.
  - [`trident/cljs-http`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cljs-http). Slight additions to `cljs-http`
