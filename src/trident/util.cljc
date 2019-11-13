@@ -370,3 +370,12 @@
   (if (empty? xs)
     0
     (/ (reduce + xs) (count xs))))
+
+(defn assoc-some [m & kvs]
+  (if-some [kvs (some->> kvs
+                         (partition 2)
+                         (filter (comp some? second))
+                         (apply concat)
+                         not-empty)]
+    (apply assoc m kvs)
+    m))
