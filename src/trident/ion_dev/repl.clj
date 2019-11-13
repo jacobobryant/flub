@@ -3,7 +3,9 @@
             [immutant.web :as imm]
             [mount.core :as mount]))
 
-(defmacro defhandler [sym config]
+(defmacro defhandler
+  "Deprecated. Use trident.repl/defhandler instead."
+  [sym config]
   `(mount/defstate ~sym
      :start (let [config# (merge {:port 8080} ~config)]
               (imm/run (:handler config#) {:port (:port config#)}))

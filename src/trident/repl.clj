@@ -2,6 +2,8 @@
   "Convenience functions for working at the repl."
   (:require [clojure.tools.namespace.repl :as tn]
             [nrepl.server :as nrepl]
+            [immutant.web :as imm]
+            [mount.core :as mount]
             [orchestra.spec.test :as st]))
 
 (defmacro refresh
@@ -24,3 +26,9 @@
    (st/instrument)
    (nrepl/start-server :port nrepl-port)
    (println "Started nrepl server on port" nrepl-port)))
+
+(defmacro defhandler [sym config]
+  `(mount/defstate ~sym
+     :start (let [config# (merge {:port 8080} ~config)]
+              (imm/run (:handler config#) {:port (:port config#)}))
+     :stop (imm/stop)))
