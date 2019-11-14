@@ -9,7 +9,8 @@
             [goog.string.format]
             [cljs.core.async :refer [<! put! chan close!]]]
       :clj [[clojure.reflect :refer [reflect]]
-            [clojure.java.io :as io]]))
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]]))
   #?(:cljs (:require-macros trident.util)))
 
 (def pprint clojure.pprint/pprint)
@@ -242,6 +243,16 @@
 
 (defn parse-int [s]
   (Long/parseLong s))
+
+(defn sh
+  "Runs a shell command.
+
+  Returns the output if successful; otherwise, throws an exception."
+  [& args]
+  (let [result (apply shell/sh args)]
+    (if (= 0 (:exit result))
+      (:out result)
+      (throw (ex-info (:err result) result)))))
 
 ) :cljs (do
 

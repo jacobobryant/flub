@@ -8,15 +8,7 @@
   (:import jnr.posix.POSIXFactory
            java.nio.file.LinkOption))
 
-(defn sh
-  "Runs a shell command.
-
-  Returns the output if successful; otherwise, throws an exception."
-  [& args]
-  (let [result (apply shell/sh args)]
-    (if (= 0 (:exit result))
-      (:out result)
-      (throw (ex-info (:err result) result)))))
+(def ^{:doc "Deprecated: use [[trident.util/sh]]"} sh u/sh)
 
 (defn path
   "Joins `xs`, returning an absolute path. Respects the \"user.dir\" property."
