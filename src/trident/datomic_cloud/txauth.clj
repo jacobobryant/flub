@@ -3,8 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [datomic.client.api :as d]
             [orchestra.core :refer [defn-spec]]
-            [taoensso.timbre :refer [error]]
-            [datomic.ion.cast :as cast]
+            [taoensso.timbre :refer [debug]]
             [trident.util :as u]
             [trident.util.datomic :as ud]))
 
@@ -79,10 +78,6 @@
    - `before` and `after`: the results of `pull`ing the entity before and after
      the transaction, respectively; or `nil` if the entity doesn't exist."
   [db authorizers uid tx]
-  (cast/event {:msg "Checking Entity change"
-               ::uid uid
-          ::tx tx})
-  (try
   (let [{:keys [tx-data db-before db-after] :as result} (d/with db {:tx-data tx})]
     (doseq [[e datoms] (group-by :e (rest tx-data))]
       (let [[before after :as ents]
@@ -109,19 +104,10 @@
               (authorize-fn auth-arg))]
 
         (when (not authorized?)
-          (cast/event {:msg "Entity change not authorized"
-                  ::auth-arg auth-arg
-                  ::matches matching-authorizers})
           (throw (ex-info "Entity change not authorized"
-                          {::auth-arg auth-arg
-                           ::matches matching-authorizers})))))
-    (cast/event {:msg "Entity change authorized"
-            ::tx tx})
-    tx)
-  (catch Exception e
-    (cast/event {:msg "error while checking Entity change"
-            ::ex e})
-    (throw e))))
+                          {:auth-arg auth-arg
+                           :matches matching-authorizers})))))
+    tx))
 
 (defn handler
   "A ring handler for authorizing and running transactions.
@@ -148,10 +134,10 @@
   (if-some [bad-fn (some #(and (symbol? %) (not (contains? allowed %)))
                          (map first tx))]
     (do
-      (error {:msg "tx not allowed"
-              ::bad-fn bad-fn
-              ::uid uid
-              ::tx tx})
+      (debug {:msg "tx not allowed"
+              :bad-fn bad-fn
+              :uid uid
+              :tx tx})
       {:status 403
        :body (str "tx fn not allowed: " bad-fn)})
     (try
@@ -163,9 +149,9 @@
                   pr-str)}
       (catch Exception e
         (do
-          (error {:msg "tx rejected"
-                  ::ex e
-                  ::uid uid
-                  ::tx tx})
+          (debug {:msg "tx rejected"
+                  :ex e
+                  :uid uid
+                  :tx tx})
           {:status 403
            :body "tx rejected"})))))
