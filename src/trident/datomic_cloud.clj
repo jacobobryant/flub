@@ -18,7 +18,10 @@
    (do
      (d/create-database client (select-keys config [:db-name]))
      (let [conn (client/connect client (select-keys config [:db-name :local-tx-fns?]))]
-       (d/transact conn {:tx-data (ud/datomic-schema (:schema config))})
+       (doseq [schema (u/split-by #(empty? (select-keys % [:db/tupleAttrs :db.entity/attrs]))
+                                  (ud/datomic-schema (:schema config)))
+               :when (not-empty schema)]
+         (d/transact conn {:tx-data schema}))
        conn)))
   ([config]
    (init-conn (d/client (:client-cfg config)) config)))
