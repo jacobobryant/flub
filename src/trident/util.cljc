@@ -254,6 +254,12 @@
       (:out result)
       (throw (ex-info (:err result) result)))))
 
+(defmacro catchall [& forms]
+  `(try ~@forms (catch Exception ~'_ nil)))
+
+(defmacro catchall-js [& forms]
+  `(try ~@forms (catch ~'Error ~'_ nil)))
+
 ) :cljs (do
 
 (defn to-chan
