@@ -1,7 +1,7 @@
 (ns trident.web
   "Highly contrived web framework.
 
-  Great for making websites that look exactly like the one I made with this."
+  Great for making websites that work exactly like the one I made with this."
   (:require [clojure.spec.alpha :as s]
             [datomic.client.api :as d]
             [orchestra.core :refer [defn-spec]]
@@ -24,6 +24,9 @@
   (->> :firebase-key
        (tion/get-param param-client)
        (firebase/verify-token token)))
+
+(defn wrap-uid [handler {:keys [param-client]}]
+  (tring/wrap-uid handler {:verify-token (partial verify-token param-client)}))
 
 (defn init-handler [{:keys [conn datoms-for ds-schema claims uid] :as req}]
   (let [tx [{:user/uid uid
@@ -53,8 +56,7 @@
                               :access-control-allow-origin origins
                               :access-control-allow-methods [:get :post]
                               :access-control-allow-headers ["Authorization" "Content-Type"]]
-                             [tring/wrap-uid
-                              {:verify-token (partial verify-token param-client)}]
+                             [wrap-uid {:param-client param-client}]
                              [tring/wrap-request
                               #(merge % (select-keys config [:datoms-for :authorizers])
                                       {:conn conn
