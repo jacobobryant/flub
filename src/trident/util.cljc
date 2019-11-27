@@ -396,3 +396,6 @@
                          not-empty)]
     (apply assoc m kvs)
     m))
+
+(defn take-str [n s]
+  (some->> s (take n) (str/join "")))
