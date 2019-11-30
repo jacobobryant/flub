@@ -1,5 +1,5 @@
 {:trident/mono
- {:version "0.1.20"
+ {:version "0.1.21-SNAPSHOT"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
