@@ -37,3 +37,19 @@
   ([db pull-expr map-from-key eids]
    (let [result (u/map-from map-from-key (pull-many db pull-expr eids))]
      (dissoc result nil))))
+
+(defn add-retract [db eid & kvs]
+  (let [kvs (partition 2 kvs)
+        ks (map first kvs)
+        ent (delay (d/pull db ks eid))]
+    (for [[k v] kvs
+          :when (or (some? v) (some? (@ent k)))]
+      (if (some? v)
+        [:db/add eid k v]
+        [:db/retract eid k (@ent k)]))))
+
+(defn pull-attr [db attr lookup]
+  (attr (d/pull db [attr] lookup)))
+
+(defn pull-id [db lookup]
+  (pull-attr db :db/id lookup))
