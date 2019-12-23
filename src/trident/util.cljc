@@ -399,3 +399,34 @@
 
 (defn take-str [n s]
   (some->> s (take n) (str/join "")))
+
+
+#?(:clj
+   (defn add-seconds [date seconds]
+     (java.util.Date/from (.plusSeconds (.toInstant date) seconds))))
+
+(defn compare= [x y]
+  (= 0 (compare x y)))
+
+(defn compare< [x y]
+  (= -1 (compare x y)))
+
+(defn compare> [x y]
+  (= 1 (compare x y)))
+
+(defn compare<= [x y]
+  (or (compare< x y) (compare= x y)))
+
+(defn compare>= [x y]
+  (or (compare> x y) (compare= x y)))
+
+(defn distinct-by [f xs]
+  (first
+    (reduce
+      (fn [[xs ks] x]
+        (let [k (f x)
+              include? (not (contains? ks k))]
+          [(cond-> xs include? (conj x))
+           (cond-> ks include? (conj k))]))
+      [nil #{}]
+      xs)))
