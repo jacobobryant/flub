@@ -430,3 +430,17 @@
            (cond-> ks include? (conj k))]))
       [nil #{}]
       xs)))
+
+
+#?(:clj
+   (do
+     (defn parse-format-date [in-format out-format date]
+       (cond->> date
+         in-format (.parse (new java.text.SimpleDateFormat in-format))
+         out-format (.format (new java.text.SimpleDateFormat out-format))))
+
+     (defn parse-date [in-format date]
+       (parse-format-date in-format nil date))
+
+     (defn format-date [out-format date]
+       (parse-format-date nil out-format date))))
