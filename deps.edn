@@ -47,7 +47,7 @@
                   :local-deps [util staticweb]
                   :deps [re-com]}
    ion           {:desc "Utilities for working with Datomic Ions"
-                  :local-deps [util cli]
+                  :local-deps [util]
                   :deps [com.datomic/ion
                          com.taoensso/timbre]
                   :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
