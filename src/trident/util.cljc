@@ -431,16 +431,15 @@
       [nil #{}]
       xs)))
 
-
 #?(:clj
    (do
-     (defn parse-format-date [in-format out-format date]
+     (defn parse-format-date [date in-format out-format]
        (cond->> date
          in-format (.parse (new java.text.SimpleDateFormat in-format))
          out-format (.format (new java.text.SimpleDateFormat out-format))))
 
-     (defn parse-date [in-format date]
-       (parse-format-date in-format nil date))
+     (defn parse-date [date in-format]
+       (parse-format-date date in-format nil))
 
-     (defn format-date [out-format date]
-       (parse-format-date nil out-format date))))
+     (defn format-date [date out-format]
+       (parse-format-date date nil out-format))))
