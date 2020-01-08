@@ -48,8 +48,21 @@
         [:db/add eid k v]
         [:db/retract eid k (@ent k)]))))
 
+(defn pull-in [db path lookup]
+  (let [[fst & rst] (reverse path)
+        pattern (reduce (fn [pattern k]
+                          [{k pattern}])
+                  [fst]
+                  rst)]
+    (get-in (d/pull db pattern lookup) path)))
+
 (defn pull-attr [db attr lookup]
-  (attr (d/pull db [attr] lookup)))
+  (pull-in db [attr] lookup))
 
 (defn pull-id [db lookup]
   (pull-attr db :db/id lookup))
+
+(defn upsert-component [db lookup attr m]
+  {:db/id lookup
+   attr (u/assoc-some m
+          :db/id (pull-in db [attr :db/id] lookup))})
