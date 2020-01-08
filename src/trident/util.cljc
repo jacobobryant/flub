@@ -388,14 +388,23 @@
     0
     (/ (reduce + xs) (count xs))))
 
-(defn assoc-some [m & kvs]
+(defn assoc-pred [m f & kvs]
   (if-some [kvs (some->> kvs
                          (partition 2)
-                         (filter (comp some? second))
+                         (filter (comp f second))
                          (apply concat)
                          not-empty)]
     (apply assoc m kvs)
     m))
+
+(defn assoc-some [m & kvs]
+  (apply assoc-pred m some? kvs))
+
+(defn assoc-not-empty [m & kvs]
+  (apply assoc-pred m #(not (catchall (empty? %))) kvs))
+
+(defn dissoc-empty [m]
+  (apply dissoc m (filter #(catchall (empty? (m %))) (keys m))))
 
 (defn take-str [n s]
   (some->> s (take n) (str/join "")))
