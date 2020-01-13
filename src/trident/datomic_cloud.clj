@@ -38,31 +38,58 @@
    (let [result (u/map-from map-from-key (pull-many db pull-expr eids))]
      (dissoc result nil))))
 
-(defn add-retract [db eid & kvs]
-  (let [kvs (partition 2 kvs)
-        ks (map first kvs)
-        ent (delay (d/pull db ks eid))]
-    (for [[k v] kvs
-          :when (or (some? v) (some? (@ent k)))]
-      (if (some? v)
-        [:db/add eid k v]
-        [:db/retract eid k (@ent k)]))))
+(defn pull-in
+  ([db [lookup & path]]
+   (let [[fst & rst] (reverse path)
+         pattern (reduce (fn [pattern k]
+                           [{k pattern}])
+                   [fst]
+                   rst)]
+     (get-in (d/pull db pattern lookup) path)))
+  ; deprecated
+  ([db path lookup]
+   (pull-in db (apply vector lookup path))))
 
-(defn pull-in [db path lookup]
-  (let [[fst & rst] (reverse path)
-        pattern (reduce (fn [pattern k]
-                          [{k pattern}])
-                  [fst]
-                  rst)]
-    (get-in (d/pull db pattern lookup) path)))
+; TODO make it work with cardinality-many attributes
+; optimize with delayed pulls
+(defn tx* [db new-ent old-ent]
+  (u/forcat [[k new-val] new-ent
+             :let [old-val (get old-ent k)]
+             :when (and (not= :db/id k)
+                     (not= new-val old-val))
+             :let [attr-info (d/pull db [:db/valueType :db/isComponent] k)
+                   ref? (= :db.type/ref (-> attr-info :db/valueType :db/ident))
+                   component? (:db/isComponent attr-info)
+                   resolved-old-val (u/pred-> old-val map? :db/id)
+                   resolved-new-val (if (map? new-val)
+                                      (get old-val :db/id
+                                        (when component?
+                                          (str (java.util.UUID/randomUUID))))
+                                      new-val)]]
+    (if (some? new-val)
+      (cond-> [[:db/add (:db/id new-ent) k resolved-new-val]]
+        component? (into (tx* db (assoc new-val :db/id resolved-new-val) old-val)))
+      (if component?
+        [[:db/retractEntity resolved-old-val]]
+        [[:db/retract (:db/id old-ent) k resolved-old-val]]))))
 
+(defn tx
+  "Convert m to a Datomic transaction"
+  [db m lookup]
+  (if (some? m)
+    (let [old-ent (d/pull db (conj (keys m) :db/id) lookup)
+          new-id (or (:db/id old-ent) (str (java.util.UUID/randomUUID)))]
+      (tx* db (assoc m :db/id new-id) old-ent))
+    [[:db/retractEntity lookup]]))
+
+; deprecated
 (defn pull-attr [db attr lookup]
   (pull-in db [attr] lookup))
 
 (defn pull-id [db lookup]
-  (pull-attr db :db/id lookup))
+  (pull-in db [lookup :db/id]))
 
 (defn upsert-component [db lookup attr m]
   {:db/id lookup
    attr (u/assoc-some m
-          :db/id (pull-in db [attr :db/id] lookup))})
+          :db/id (pull-in db [lookup attr :db/id]))})

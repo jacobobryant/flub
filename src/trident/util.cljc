@@ -11,9 +11,15 @@
       :clj [[clojure.reflect :refer [reflect]]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]]))
-  #?(:cljs (:require-macros trident.util)))
+  #?(:cljs (:require-macros
+             trident.util
+             [cljs.core.async.macros :refer [go]])))
 
 (def pprint clojure.pprint/pprint)
+
+(defn spy [x]
+  (pprint x)
+  x)
 
 (defn pred-> [x f g]
   (if (f x) (g x) x))
@@ -258,7 +264,7 @@
   `(try ~@forms (catch Exception ~'_ nil)))
 
 (defmacro catchall-js [& forms]
-  `(try ~@forms (catch ~'Error ~'_ nil)))
+  `(try ~@forms (catch ~'js/Error ~'_ nil)))
 
 ) :cljs (do
 
@@ -400,11 +406,12 @@
 (defn assoc-some [m & kvs]
   (apply assoc-pred m some? kvs))
 
+; idk why, but fully-qualifying catchall-js prevents compiler warnings.
 (defn assoc-not-empty [m & kvs]
-  (apply assoc-pred m #(not (catchall (empty? %))) kvs))
+  (apply assoc-pred m #(not (#?(:clj catchall :cljs trident.util/catchall-js) (empty? %))) kvs))
 
 (defn dissoc-empty [m]
-  (apply dissoc m (filter #(catchall (empty? (m %))) (keys m))))
+  (apply dissoc m (filter #(#?(:clj catchall :cljs trident.util/catchall-js) (empty? (m %))) (keys m))))
 
 (defn take-str [n s]
   (some->> s (take n) (str/join "")))
@@ -452,3 +459,27 @@
 
      (defn format-date [date out-format]
        (parse-format-date date nil out-format))))
+
+#?(:cljs
+   (defn synchronize
+     "Returns a fn that will queue calls to `f`, an async fn."
+     [f]
+     (let [queue (atom #queue [])
+           notify-chans (atom {})]
+       (fn [& args]
+         (let [f #(apply f args)
+               wait? (not (empty? @queue))]
+           (swap! queue conj f)
+           (when wait?
+             (swap! notify-chans assoc f (chan)))
+           (go
+             (when wait?
+               (<! (@notify-chans f)))
+             (let [ret (<! (f))]
+               (swap! queue pop)
+               (when wait?
+                 (close! (@notify-chans f))
+                 (swap! notify-chans dissoc f))
+               (when-not (empty? @queue)
+                 (put! (@notify-chans (peek @queue)) :done))
+               ret)))))))
