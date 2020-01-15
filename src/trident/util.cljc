@@ -394,7 +394,9 @@
     0
     (/ (reduce + xs) (count xs))))
 
-(defn assoc-pred [m f & kvs]
+(defn assoc-pred
+  "Like assoc, but skip kv pairs where (f v) is false."
+  [m f & kvs]
   (if-some [kvs (some->> kvs
                          (partition 2)
                          (filter (comp f second))
@@ -406,12 +408,16 @@
 (defn assoc-some [m & kvs]
   (apply assoc-pred m some? kvs))
 
+(defn emptyish? [x]
+  "Like empty?, but return false whenever empty? would throw an exception."
+  (boolean (#?(:clj catchall :cljs trident.util/catchall-js) (empty? x))))
+
 ; idk why, but fully-qualifying catchall-js prevents compiler warnings.
 (defn assoc-not-empty [m & kvs]
-  (apply assoc-pred m #(not (#?(:clj catchall :cljs trident.util/catchall-js) (empty? %))) kvs))
+  (apply assoc-pred m #(not (emptyish? %)) kvs))
 
 (defn dissoc-empty [m]
-  (apply dissoc m (filter #(#?(:clj catchall :cljs trident.util/catchall-js) (empty? (m %))) (keys m))))
+  (apply dissoc m (filter #(emptyish? (m %)) (keys m))))
 
 (defn take-str [n s]
   (some->> s (take n) (str/join "")))
