@@ -423,9 +423,9 @@
   (some->> s (take n) (str/join "")))
 
 
-#?(:clj
-   (defn add-seconds [date seconds]
-     (java.util.Date/from (.plusSeconds (.toInstant date) seconds))))
+(defn add-seconds [date seconds]
+  #?(:clj (java.util.Date/from (.plusSeconds (.toInstant date) seconds))
+     :cljs (js/Date. (+ (.getTime date) (* 1000 seconds)))))
 
 (defn compare= [x y]
   (= 0 (compare x y)))
