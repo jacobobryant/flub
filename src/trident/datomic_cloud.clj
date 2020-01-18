@@ -50,28 +50,37 @@
   ([db path lookup]
    (pull-in db (apply vector lookup path))))
 
-; TODO make it work with cardinality-many attributes
-; optimize with delayed pulls
+(defn many-op [op id k v many?]
+  (mapv (fn [v] [op id k v]) (cond-> v (not many?) vector)))
+
+; todo optimize with delayed pulls
 (defn tx* [db new-ent old-ent]
   (u/forcat [[k new-val] new-ent
              :let [old-val (get old-ent k)]
              :when (and (not= :db/id k)
                      (not= new-val old-val))
-             :let [attr-info (d/pull db [:db/valueType :db/isComponent] k)
+             :let [attr-info (d/pull db [:db/valueType :db/isComponent :db/cardinality] k)
                    ref? (= :db.type/ref (-> attr-info :db/valueType :db/ident))
                    component? (:db/isComponent attr-info)
+                   many? (= :db.cardinality/many (-> attr-info :db/cardinality :db/ident))
                    resolved-old-val (u/pred-> old-val map? :db/id)
                    resolved-new-val (if (map? new-val)
                                       (get old-val :db/id
                                         (when component?
                                           (str (java.util.UUID/randomUUID))))
-                                      new-val)]]
+                                      new-val)
+                   many-missing (when many?
+                                  (->> resolved-old-val
+                                    (remove (set resolved-new-val))
+                                    (map #(u/pred-> % map? :db/id))))]]
     (if (some? new-val)
-      (cond-> [[:db/add (:db/id new-ent) k resolved-new-val]]
+      (cond->
+        (many-op :db/add (:db/id new-ent) k resolved-new-val many?)
+        many? (into (many-op :db/retract (:db/id new-ent) k many-missing true))
         component? (into (tx* db (assoc new-val :db/id resolved-new-val) old-val)))
       (if component?
         [[:db/retractEntity resolved-old-val]]
-        [[:db/retract (:db/id old-ent) k resolved-old-val]]))))
+        (many-op :db/retract (:db/id old-ent) k resolved-old-val many?)))))
 
 (defn tx
   "Convert m to a Datomic transaction"
