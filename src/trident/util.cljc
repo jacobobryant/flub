@@ -443,15 +443,17 @@
   (or (compare> x y) (compare= x y)))
 
 (defn distinct-by [f xs]
-  (first
+  (->>
     (reduce
       (fn [[xs ks] x]
         (let [k (f x)
               include? (not (contains? ks k))]
           [(cond-> xs include? (conj x))
            (cond-> ks include? (conj k))]))
-      [nil #{}]
-      xs)))
+      ['() #{}]
+      xs)
+    first
+    reverse))
 
 #?(:clj
    (do
