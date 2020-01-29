@@ -1,10 +1,12 @@
 (ns trident.util
   "Utility library. Docstrings are omitted for simple functions; read the source
   to see what they do."
-  (:require [clojure.walk :refer [postwalk]]
-            [clojure.pprint]
-            [clojure.spec.alpha :as s]
-            [clojure.string :as str]
+  (:require
+    [cemerick.url :as url]
+    [clojure.walk :refer [postwalk]]
+    [clojure.pprint]
+    [clojure.spec.alpha :as s]
+    [clojure.string :as str]
  #?@(:cljs [[goog.string :as gstring]
             [goog.string.format]
             [cljs.core.async :refer [<! put! chan close!]]]
@@ -13,7 +15,7 @@
             [clojure.java.shell :as shell]]))
   #?(:cljs (:require-macros
              trident.util
-             [cljs.core.async.macros :refer [go]])))
+             [cljs.core.async.macros :refer [go go-loop]])))
 
 (def pprint clojure.pprint/pprint)
 
@@ -491,3 +493,20 @@
                (when-not (empty? @queue)
                  (put! (@notify-chans (peek @queue)) :done))
                ret)))))))
+
+#?(:cljs
+   (defn go-comp [& fs]
+     (fn [& args]
+       (go-loop [args args
+                 fs (reverse fs)]
+         (if-some [f (first fs)]
+           (let [result (apply f args)
+                 result (if (satisfies? cljs.core.async.impl.protocols/ReadPort result)
+                          (<! result)
+                          result)]
+             (recur [result] (rest fs)))
+           (first args))))))
+
+(defn parse-url [url]
+  (#?(:clj catchall :cljs trident.util/catchall-js)
+    (url/url url)))

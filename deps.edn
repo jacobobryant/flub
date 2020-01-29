@@ -15,6 +15,7 @@
                          nrepl]}
    util          {:desc "A collection of utility functions & macros."
                   :deps [org.clojure/core.async
+                         com.cemerick/url
                          orchestra]}
    staticweb     {:desc "Tools for making static websites"
                   :deps [garden
@@ -93,6 +94,7 @@
   :managed-deps
   {cljs-http {:mvn/version "0.1.46"}
    com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
+   com.cemerick/url {:mvn/version "0.1.1"}
    com.datomic/client-cloud {:mvn/version "0.8.78"}
    com.datomic/datomic-free {:mvn/version "0.9.5697"}
    com.datomic/ion {:mvn/version "0.9.35"}
