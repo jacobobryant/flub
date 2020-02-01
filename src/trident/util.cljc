@@ -510,3 +510,23 @@
 (defn parse-url [url]
   (#?(:clj catchall :cljs trident.util/catchall-js)
     (url/url url)))
+
+(defmacro when-some-all [[& bindings] & forms]
+  (if (empty? bindings)
+    `(do ~@forms)
+    `(when-some [~@(take 2 bindings)]
+       (when-some-all [~@(drop 2 bindings)]
+         ~@forms))))
+
+(defmacro if-some-all [[& bindings] & [then else :as forms]]
+  (if (>= 2 (count bindings))
+    `(if-some [~@bindings]
+       ~@forms)
+    `(if-some [~@(take 2 bindings)]
+       (if-some-all [~@(drop 2 bindings)]
+         ~@forms)
+       ~else)))
+
+(defn now []
+  #?(:clj (java.util.Date.)
+     :cljs (js/Date.)))
