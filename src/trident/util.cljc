@@ -530,3 +530,17 @@
 (defn now []
   #?(:clj (java.util.Date.)
      :cljs (js/Date.)))
+
+(defn interleave-weighted [w coll-a coll-b]
+  ((fn step [na nb coll-a coll-b]
+     (let [i (if (<= (/ na (max (+ na nb) 1)) w) 0 1)
+           colls [coll-a coll-b]
+           done (empty? (get colls i))
+           x (first (get colls i))
+           [coll-a coll-b] (update colls i rest)
+           [na nb] (update [na nb] i inc)]
+       (when-not done
+         (lazy-seq
+           (cons x
+             (step na nb coll-a coll-b))))))
+   0 0 coll-a coll-b))
