@@ -1,8 +1,10 @@
 (ns trident.datomic-cloud
-  (:require [datomic.client.api :as d]
-            [trident.util :as u]
-            [trident.util.datomic :as ud]
-            [trident.datomic-cloud.client :as client]))
+  (:require
+    [clojure.walk :as walk]
+    [datomic.client.api :as d]
+    [trident.util :as u]
+    [trident.util.datomic :as ud]
+    [trident.datomic-cloud.client :as client]))
 
 (defn init-conn
   "Initializes and returns Datomic cloud connection.
@@ -102,3 +104,10 @@
   {:db/id lookup
    attr (u/assoc-some m
           :db/id (pull-in db [lookup attr :db/id]))})
+
+(defn q-with [q replacements & args]
+  (apply d/q
+    (walk/postwalk #(cond-> %
+                      (contains? replacements %) replacements)
+      q)
+    args))

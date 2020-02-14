@@ -544,3 +544,25 @@
            (cons x
              (step na nb coll-a coll-b))))))
    0 0 coll-a coll-b))
+
+(defn wrand [slices]
+  (let [total (reduce + slices)
+        r (rand total)]
+    (loop [i 0 sum 0]
+      (if (< r (+ (slices i) sum))
+        i
+        (recur (inc i) (+ (slices i) sum))))))
+
+(defn sample-by [f xs]
+  (when (not-empty xs)
+    (let [choice (wrand (mapv f xs))
+          ys (concat (take choice xs) (drop (inc choice) xs))]
+      (lazy-seq (cons (nth xs choice) (sample-by f ys))))))
+
+(defn random-by [f xs]
+  (when (not-empty xs)
+    (let [choice (wrand (mapv f xs))]
+      (lazy-seq (cons (nth xs choice) (random-by f xs))))))
+
+(defn ceil-at [x n]
+  (int (* (Math/ceil (/ x n)) n)))
