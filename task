@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+set -x
+
+repl () {
+  GRENCH_PORT=7800 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"
+}
+
+dev () {
+  clj -Adev "$@" -e "(init)" -r
+}
+
+"$@"

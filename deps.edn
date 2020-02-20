@@ -17,6 +17,9 @@
                   :deps [org.clojure/core.async
                          com.cemerick/url
                          orchestra]}
+   rum           {:desc "Rum components and utilities"
+                  :local-deps [util]
+                  :deps [rum]}
    staticweb     {:desc "Tools for making static websites"
                   :deps [garden
                          hiccup]}
@@ -126,4 +129,5 @@
    reagent {:mvn/version "0.8.1"}
    ring-cors {:mvn/version "0.1.13"}
    ring-middleware-format {:mvn/version "0.7.4"}
-   ring/ring-defaults {:mvn/version "0.3.2"}}}}
+   ring/ring-defaults {:mvn/version "0.3.2"}
+   rum {:mvn/version "0.11.4"}}}}
