@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.1.21"}
+trident/<artifact> {:mvn/version "0.2.0"}
 ```
 
 # Trident
@@ -43,6 +43,7 @@ to see what's available, but here's a list of the artifacts for convenience:
  - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud) (includes `util`). Tools for Datomic Cloud.
  - [`trident/ring`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ring). Some Ring middleware.
  - [`trident/firebase`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firebase). Functions for authenticating Firebase user tokens.
+ - [`trident/firestore`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firestore). A Clojurey wrapper for Firestore.
  - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion) (includes `util`). Utilities for working with Datomic Ions
  - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web) (includes `util`, `datomic-cloud`, `firebase`, `ion`, `ring`). Highly contrived web framework.
  - [`trident/staticweb`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.staticweb). Tools for making static websites
@@ -62,8 +63,8 @@ of the way, if you're interested in anything Trident does, I'd love to chat.
 
 Projects using Trident:
 
- - [Findka](https://findka.com), a content curation system.
- - [Lagukan](https://lagukan.com), a music recommendation service.
+ - [Findka](https://findka.com), a cross-domain recommender system.
+ - [Lagukan](https://lagukan.com), a music recommender system.
  - [FlexBudget](https://github.com/jacobobryant/flexbudget), a [flexible budgeting app](https://notjust.us).
 
 ## Contact

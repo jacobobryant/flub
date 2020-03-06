@@ -566,3 +566,13 @@
 
 (defn ceil-at [x n]
   (int (* (Math/ceil (/ x n)) n)))
+
+(defn dissoc-vec [v i]
+  (into (subvec v 0 i) (subvec v (inc i))))
+
+(defn wrap-vec
+  "Use judiciously."
+  [x]
+  (if (coll? x)
+    x
+    (vector x)))
