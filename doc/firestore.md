@@ -51,7 +51,7 @@ I need the extra features.
 ## Usage
 
 ```clojure
-trident/firestore {:mvn/version "0.2.0"}
+trident/firestore {:mvn/version "0.2.1"}
 ```
 
 At some point you should read the [Firestore docs](https://firebase.google.com/docs/firestore).
