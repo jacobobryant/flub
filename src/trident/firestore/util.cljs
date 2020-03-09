@@ -75,7 +75,7 @@
                       (oapply+ r method (u/wrap-vec arg))
                       r))
             r
-            [[(some->> order-by u/wrap-vec (map name)) :orderBy]
+            [[(some->> order-by (map (comp #(map name %) u/wrap-vec))) :orderBy]
              [start-at :startAt]
              [start-after :startAfter]
              [end-at :endAt]
