@@ -7,8 +7,7 @@ trident/<artifact> {:mvn/version "0.2.1"}
 > Because I had to call it something
 
 Trident is where I put all the code that I abstract out of various projects I
-work on. My top-level goal with Trident is to maximize code reuse (especially my
-own, but hopefully for others as well). This has two parts:
+work on.
 
 ## Contents
 
