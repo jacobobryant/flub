@@ -449,7 +449,7 @@ run into any bugs, please let me know. Same goes for the code examples on this p
 
 ## Self-promotion
 
-If you want to support my work, subscribe to [my newsletter](https://jacobobryant.substack.com).
+If you want to support my work, subscribe to [my newsletter](https://findka.com/subscribe/).
 
 ## License
 
