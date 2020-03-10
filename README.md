@@ -50,7 +50,7 @@ Also see [`trident.cli` Getting Started](doc/cli.md).
 
 ## Self-promotion
 
-If you want to support my work, subscribe to [my newsletter](https://jacobobryant.substack.com).
+If you want to support my work, subscribe to [my newsletter](https://findka.com/subscribe/).
 
 ## License
 
