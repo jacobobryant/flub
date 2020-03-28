@@ -4,12 +4,14 @@
   (:require
     [cemerick.url :as url]
     [clojure.walk :refer [postwalk]]
+    [clojure.edn :as edn]
+    [clojure.set :as set]
     [clojure.pprint]
     [clojure.spec.alpha :as s]
     [clojure.string :as str]
  #?@(:cljs [[goog.string :as gstring]
             [goog.string.format]
-            [cljs.core.async :refer [<! put! chan close!]]]
+            [cljs.core.async :as async :refer [<! put! take! chan close!]]]
       :clj [[clojure.reflect :refer [reflect]]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]]))
@@ -494,18 +496,24 @@
                  (put! (@notify-chans (peek @queue)) :done))
                ret)))))))
 
-#?(:cljs
-   (defn go-comp [& fs]
-     (fn [& args]
-       (go-loop [args args
-                 fs (reverse fs)]
-         (if-some [f (first fs)]
-           (let [result (apply f args)
-                 result (if (satisfies? cljs.core.async.impl.protocols/ReadPort result)
-                          (<! result)
-                          result)]
-             (recur [result] (rest fs)))
-           (first args))))))
+#?(:cljs (do
+
+(defn chan? [x]
+  (satisfies? cljs.core.async.impl.protocols/ReadPort x))
+
+(defn go-comp [& fs]
+  (fn [& args]
+    (go-loop [args args
+              fs (reverse fs)]
+      (if-some [f (first fs)]
+        (let [result (apply f args)
+              result (if (chan? result)
+                       (<! result)
+                       result)]
+          (recur [result] (rest fs)))
+        (first args)))))
+
+))
 
 (defn parse-url [url]
   (#?(:clj catchall :cljs trident.util/catchall-js)
@@ -533,12 +541,12 @@
 
 (defn interleave-weighted [w coll-a coll-b]
   ((fn step [na nb coll-a coll-b]
-     (let [i (if (<= (/ na (max (+ na nb) 1)) w) 0 1)
-           colls [coll-a coll-b]
-           done (empty? (get colls i))
-           x (first (get colls i))
+     (let [i               (if (<= (/ na (max (+ na nb) 1)) w) 0 1)
+           colls           [coll-a coll-b]
+           done            (empty? (get colls i))
+           x               (first (get colls i))
            [coll-a coll-b] (update colls i rest)
-           [na nb] (update [na nb] i inc)]
+           [na nb]         (update [na nb] i inc)]
        (when-not done
          (lazy-seq
            (cons x
@@ -576,3 +584,136 @@
   (if (coll? x)
     x
     (vector x)))
+
+(defn respectively [& fs]
+  (fn [& xs]
+    (mapv #(%1 %2) fs xs)))
+
+(defn capture-env* [nspace]
+  (trident.util/map-kv (respectively keyword deref) nspace))
+
+(defn prepend-ns [ns-segment k]
+  (keyword
+    (cond-> ns-segment
+      (not-empty (namespace k)) (str "." (namespace k)))
+    (name k)))
+
+(defn prepend-keys [ns-segment m]
+  (map-keys #(prepend-ns ns-segment %) m))
+
+#?(:clj (do
+
+(defmacro capture-env [nspace]
+  `(capture-env* (ns-publics ~nspace)))
+
+(defmacro defcursors [db & forms]
+  `(do
+     ~@(for [[sym path] (partition 2 forms)]
+         `(defonce ~sym (rum.core/cursor-in ~db ~path)))))
+
+(defn flatten-form [form]
+  (if (some #(% form)
+        [list?
+         #(instance? clojure.lang.IMapEntry %)
+         seq?
+         #(instance? clojure.lang.IRecord %)
+         coll?])
+    (mapcat flatten-form form)
+    (list form)))
+
+(defn derivations [sources nspace & forms]
+  (->> (partition 2 forms)
+    (reduce
+      (fn [[defs sources] [sym form]]
+        (let [deps (->> form
+                     flatten-form
+                     (map sources)
+                     (filter some?)
+                     distinct
+                     vec)
+              k (keyword (name nspace) (name sym))]
+          [(conj defs `(defonce ~sym (rum.core/derived-atom ~deps ~k
+                                       (fn ~deps
+                                         ~form))))
+           (conj sources sym)]))
+      [[] (set sources)])
+    first))
+
+(defmacro defderivations [& args]
+  `(do ~@(apply derivations args)))
+
+) :cljs (do
+
+(defn maintain-subscriptions
+  "Watch for changes in a set of subscriptions (stored in sub-atom), subscribing
+  and unsubscribing accordingly. sub-fn should take an element of @sub-atom and
+  return a channel that delivers the subscription channel after the first subscription result
+  has been received. This is necessary because otherwise, old subscriptions would
+  be closed too early, causing problems for the calculation of sub-atom."
+  [sub-atom sub-fn]
+  (let [sub->chan (atom {})
+        c (chan)
+        watch (fn [_ _ old-subs new-subs]
+                (put! c [old-subs new-subs]))]
+    (go-loop []
+      (let [[old-subs new-subs] (<! c)
+            tmp old-subs
+            old-subs (set/difference old-subs new-subs)
+            new-subs (vec (set/difference new-subs tmp))
+            new-channels (<! (async/map vector (map sub-fn new-subs)))]
+        (swap! sub->chan merge (zipmap new-subs new-channels))
+        (doseq [channel (map @sub->chan old-subs)]
+          (close! channel))
+        (swap! sub->chan #(apply dissoc % old-subs)))
+      (recur))
+    (add-watch sub-atom ::maintain-subscriptions watch)
+    (watch nil nil #{} @sub-atom)))
+
+(defn merge-subscription-results!
+  "Continually merge results from subscription into sub-data-atom. Returns a channel
+  that delivers sub-channel after the first result has been merged."
+  [{:keys [sub-data-atom merge-result sub-key sub-channel]}]
+  (go
+    (let [merge! #(swap! sub-data-atom update sub-key merge-result %)]
+      (merge! (<! sub-channel))
+      (go-loop []
+        (if-some [result (<! sub-channel)]
+          (do
+            (merge! result)
+            (recur))
+          (swap! sub-data-atom dissoc sub-key)))
+      sub-channel)))
+
+; figure out why this causes "Can't take value of macro trident.util/js<!"
+;(defn firebase-fns [ks]
+;  (map-to (fn [k]
+;            (let [f (.. js/firebase
+;                      functions
+;                      (httpsCallable (name k)))]
+;              (fn [data]
+;                (-> data
+;                  pr-str
+;                  f
+;                  js<!
+;                  .-data
+;                  edn/read-string
+;                  go))))
+;    ks))
+
+(defn wrap-firebase-fn [handler]
+  (fn [data context]
+    (let [[event data] (edn/read-string data)
+          env (-> context
+                (js->clj :keywordize-keys true)
+                (assoc :event event))
+          env (-> env
+                (merge (prepend-keys "auth" (:auth env)))
+                (dissoc :auth))
+          result (handler env data)]
+      (if (chan? result)
+        (js/Promise.
+          (fn [success]
+            (take! result (comp success pr-str))))
+        (pr-str result)))))
+
+))
