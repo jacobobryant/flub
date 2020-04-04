@@ -1,6 +1,6 @@
 # trident.firestore
 
-trident.firestore is a Clojure wrapper for Firebase's [Cloud
+trident.firestore is a ClojureScript wrapper for Firebase's [Cloud
 Firestore](https://firebase.google.com/docs/firestore).
 
 ## Table of Contents

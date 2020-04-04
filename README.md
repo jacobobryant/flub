@@ -7,8 +7,7 @@ trident/<artifact> {:mvn/version "0.2.2"}
 > Because I had to call it something
 
 Trident is where I put all the code that I abstract out of various projects I
-work on. My top-level goal with Trident is to maximize code reuse (especially my
-own, but hopefully for others as well). This has two parts:
+work on.
 
 ## Contents
 
@@ -51,7 +50,7 @@ Also see [`trident.cli` Getting Started](doc/cli.md).
 
 ## Self-promotion
 
-If you want to support my work, subscribe to [my newsletter](https://jacobobryant.substack.com).
+If you want to support my work, subscribe to [my newsletter](https://findka.com/subscribe/).
 
 ## License
 
