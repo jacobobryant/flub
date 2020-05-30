@@ -9,11 +9,8 @@
     [oops.core :refer [oget ocall oapply+]]
     [trident.util :as u]))
 
-; Will this fail in the browser if Firebase is included as an NPM dependency?
-(def Timestamp
-  (or
-    (u/catchall-js js/firebase.firestore.Timestamp)
-    (oget (js/require "firebase-admin") "firestore.Timestamp")))
+(defn timestamp? [x]
+  (fn? (u/catchall-js (aget x "toDate"))))
 
 (defn path->ident [path]
   (let [table-pos (- (count path) 2)
@@ -98,7 +95,7 @@
       (if-some [path-str (u/catchall-js (oget x :path))]
         (path-str->ident path-str)
         (cond-> x
-          (= (type x) Timestamp) (ocall :toDate))))
+          (timestamp? x) (ocall :toDate))))
     doc))
 
 (defn coerce-coll-idents [firestore coll]
@@ -115,7 +112,6 @@
       ; We can't just check (s/valid? ::doc-ident x) here because it matches
       ; key-value pairs in maps.
       (cond
-        (inst? x) (ocall Timestamp :fromDate x)
         (coll? x) (coerce-coll-idents firestore x)
         :default  x))
     x))
