@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.2.3"}
+trident/<artifact> {:mvn/version "0.3.0"}
 ```
 
 # Trident
@@ -46,7 +46,7 @@ Also see [`trident.cli` Getting Started](doc/cli.md).
 
 ## Contact
 
-`#trident` on [Clojurians](https://clojurians.slack.com)
+`#trident` on [Clojurians Slack](http://clojurians.net)
 
 ## Self-promotion
 

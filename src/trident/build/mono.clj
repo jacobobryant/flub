@@ -24,9 +24,7 @@ in the `:trident/mono` key of `deps.edn`. Example:
   ; `target/util/`, and a deps.edn file will be created that includes the
   ; dependencies specified here.
   ;
-  ; :local-deps specifies dependencies to other projects. For example, the source
-  ; files and dependencies of the util project will also be included in the cli
-  ; project.
+  ; :local-deps specifies dependencies to other projects.
   ;
   ; In the project directories, source files are included by creating symbolic
   ; links to files and directories in the top-level `src` directory. So you
@@ -104,32 +102,39 @@ in the `:trident/mono` key of `deps.edn`. Example:
     [local-deps maven-deps]))
 
 (defn ^{:doc docstring} reset
-  [{:keys [projects group-id managed-deps] :as opts} & libs]
-  (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))]
-    (let [dest (path "target" lib "src" group-id)
-          [local-deps maven-deps] (if (= lib group-id)
-                                    [(keys projects) (keys managed-deps)]
-                                    (get-deps projects lib))
-          maven-deps (conj maven-deps 'org.clojure/clojure)
-
-          lib-config (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
-                            {:artifact-id (str lib)
-                             :git-dir (path ".")})
-          deps-edn (merge {:paths ["src"]
-                           :deps (select-keys managed-deps maven-deps)
-                           :trident/lib lib-config}
-                          (select-keys opts [:aliases])
-                          (dissoc (projects lib) :deps :local-deps))]
-      (rmrf dest)
-      (fs/mkdirs dest)
-      (doseq [dep local-deps
-              ext [".clj" ".cljs" ".cljc" "/"]
-              :let [dep (str/replace (name dep) "-" "_")
-                    basename (str dep ext)
-                    target (path "src" group-id basename)]
-              :when (fs/exists? target)]
-        (fs/sym-link (path dest basename) target))
-      (sppit (path "target" lib "deps.edn") deps-edn))))
+  [{:keys [projects group-id managed-deps version] :as opts} & libs]
+  (doseq [lib (or (not-empty (map symbol libs)) (conj (keys projects) group-id))
+          :let [dest (path "target" lib "src" group-id)
+                ;[local-deps maven-deps] (if (= lib group-id)
+                ;                          [(keys projects) (keys managed-deps)]
+                ;                          (get-deps projects lib))
+                {:keys [deps local-deps exclude]} (projects lib)
+                deps (select-keys managed-deps (conj deps 'org.clojure/clojure))
+                deps (merge deps
+                       (u/map-from-to
+                         #(symbol (str group-id) (str %))
+                         (constantly {:mvn/version version})
+                         local-deps))
+                deps (cond->> deps
+                       exclude (u/map-vals #(assoc % :exclusions exclude)))
+                lib-config (merge (select-keys opts [:version :group-id :github-repo :cljdoc-dir])
+                             {:artifact-id (str lib)
+                              :git-dir (path ".")})
+                deps-edn (merge {:paths ["src"]
+                                 :deps deps
+                                 :trident/lib lib-config}
+                           (select-keys opts [:aliases])
+                           (dissoc (projects lib) :deps :local-deps))]]
+    (rmrf dest)
+    (fs/mkdirs dest)
+    (doseq [dep [lib] ;local-deps
+            ext [".clj" ".cljs" ".cljc" "/"]
+            :let [dep (str/replace (name dep) "-" "_")
+                  basename (str dep ext)
+                  target (path "src" group-id basename)]
+            :when (fs/exists? target)]
+      (fs/sym-link (path dest basename) target))
+    (sppit (path "target" lib "deps.edn") deps-edn)))
 
 (defn info
   "Prints artifact information."
