@@ -1,5 +1,5 @@
 {:trident/mono
- {:version "0.3.0"
+ {:version "0.3.1"
   :group-id "trident"
   :github-repo "jacobobryant/trident"
   :cljdoc-dir "/home/arch/dev/cljdoc/"
@@ -16,7 +16,11 @@
    util          {:desc "A collection of utility functions & macros."
                   :deps [org.clojure/core.async
                          com.cemerick/url
+                         com.stuartsierra/dependency
                          orchestra]}
+   jwt           {:desc "(En/de)code JWTs"
+                  :local-deps [util]
+                  :deps [ovotech/ring-jwt]}
    rum           {:desc "Rum components and utilities"
                   :local-deps [util]
                   :deps [rum]}
@@ -109,6 +113,7 @@
    com.datomic/ion-dev {:mvn/version "0.9.234"}
    com.github.jnr/jnr-posix {:mvn/version "3.0.49"}
    com.google.firebase/firebase-admin {:mvn/version "6.8.1"}
+   com.stuartsierra/dependency {:mvn/version "1.0.0"}
    com.taoensso/timbre {:mvn/version "4.10.0"}
    datascript {:mvn/version "0.18.2"}
    deps-deploy {:mvn/version "0.0.9"}
@@ -130,6 +135,7 @@
    org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}
    org.clojure/tools.namespace {:mvn/version "0.2.11"}
    org.immutant/web {:mvn/version "2.1.10"}
+   ovotech/ring-jwt {:mvn/version "1.2.5"}
    re-com {:mvn/version "2.5.0"}
    reagent {:mvn/version "0.8.1"}
    ring-cors {:mvn/version "0.1.13"}

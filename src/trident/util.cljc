@@ -9,10 +9,13 @@
     [clojure.pprint]
     [clojure.spec.alpha :as s]
     [clojure.string :as str]
+    [com.stuartsierra.dependency :as dep]
  #?@(:cljs [[goog.string :as gstring]
             [goog.string.format]
             [cljs.core.async :as async :refer [<! put! take! chan close!]]]
       :clj [[clojure.reflect :refer [reflect]]
+            [clojure.core.memoize :as memo]
+            [clojure.core.async :as async :refer [close! >! <! go go-loop chan put!]]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]]))
   #?(:cljs (:require-macros
@@ -717,3 +720,182 @@
         (pr-str result)))))
 
 ))
+
+(defn sort-components [components]
+  (let [name->component (into {} (map (juxt :name identity) components))]
+    (->> (for [{this-name :name :as component} components
+               relationship [:requires :required-by]
+               other-name (get component relationship)]
+           (if (= relationship :requires)
+             [this-name other-name]
+             [other-name this-name]))
+      (reduce (fn [graph [a b]]
+                (dep/depend graph a b))
+        (dep/graph))
+      (dep/topo-sort)
+      (map name->component))))
+
+(defn start-system [components]
+  (->> components
+    sort-components
+    (map :start)
+    reverse
+    (apply comp)
+    (#(% {:sys/stop '()}))))
+
+(defn stop-system [{:sys/keys [stop]}]
+  (doseq [f stop]
+    (f)))
+
+#?(:clj (defmacro defmemo [sym ttl & forms]
+          `(do
+             (defn f# ~@forms)
+             (def ~sym (memo/ttl f# :ttl/threshold ~ttl)))))
+
+(defn nest-string-keys [m ks]
+  (let [ks (set ks)]
+    (reduce (fn [resp [k v]]
+              (let [nested-k (keyword (namespace k))]
+                (if (ks nested-k)
+                  (-> resp
+                    (update nested-k assoc (name k) v)
+                    (dissoc k))
+                  resp)))
+    m
+    m)))
+
+(defn merge-safe [& ms]
+  (if-some [shared-keys (not-empty (apply set/intersection (map (comp set keys) ms)))]
+    (throw (ex-info "Attempted to merge duplicate keys"
+             {:keys shared-keys}))
+    (apply merge ms)))
+
+(defn only-keys [& {:keys [req opt req-un opt-un]}]
+  (let [all-keys (->> (concat req-un opt-un)
+                   (map (comp keyword name))
+                   (concat req opt))]
+    (s/and #(= % (select-keys % all-keys))
+      (eval `(s/keys :req ~req :opt ~opt :req-un ~req-un :opt-un ~opt-un)))))
+
+#?(:clj (defmacro sdefs [& forms]
+          `(do
+             ~@(for [form (partition 2 forms)]
+                 `(s/def ~@form)))))
+
+#?(:clj
+   (defn pipe-fn [f & fs]
+     (let [from (chan)
+           to (chan)
+           _ (async/pipeline 1 to (map (fn [{:keys [id args]}]
+                                         {:id id
+                                          :result (apply f args)})) from)
+           to (reduce (fn [from f]
+                        (let [to (chan)]
+                          (async/pipeline 1 to (map #(update % :result f)) from)
+                          to))
+                to fs)
+           p (async/pub to :id)
+           next-id (fn [id]
+                     (if (= Long/MAX_VALUE id)
+                       0
+                       (inc id)))
+           id (atom 0)]
+       {:f (fn [& args]
+             (let [id (swap! id next-id)
+                   ch (chan)]
+               (async/sub p id ch)
+               (put! from {:id id
+                           :args args})
+               (go
+                 (let [{:keys [result]} (<! ch)]
+                   (async/unsub p id ch)
+                   result))))
+        :close #(close! from)})))
+
+(defn anomaly? [x]
+  (s/valid? (s/keys :req [:cognitect.anomalies/category] :opt [:cognitect.anomalies/message]) x))
+
+(defn anom [category & [message & kvs]]
+  (apply assoc-some
+    {:cognitect.anomalies/category (keyword "cognitect.anomalies" (name category))}
+    :cognitect.anomalies/message message
+    kvs))
+
+#?(:clj (defn tmp-dir []
+          (doto (io/file (System/getProperty "java.io.tmpdir")
+                  (str
+                    (System/currentTimeMillis)
+                    "-"
+                    (long (rand 0x100000000))))
+            .mkdirs
+            .deleteOnExit)))
+
+(defn add-deref [form syms]
+  (postwalk
+    #(cond->> %
+       (syms %) (list deref))
+    form))
+
+#?(:clj (defmacro letdelay [bindings & forms]
+          (let [[bindings syms] (->> bindings
+                                  (partition 2)
+                                  (reduce (fn [[bindings syms] [sym form]]
+                                            [(into bindings [sym `(delay ~(add-deref form syms))])
+                                             (conj syms sym)])
+                                    [[] #{}]))]
+            `(let ~bindings
+               ~@(add-deref forms syms)))))
+
+#?(:clj (defmacro fix-stdout [& forms]
+          `(let [ret# (atom nil)
+                 s# (with-out-str
+                      (reset! ret# (do ~@forms)))]
+             (some->> s#
+               not-empty
+               (.print System/out))
+             @ret#)))
+
+(defn flatten-ns [m]
+  (reduce (fn [m [k v :as pair]]
+            (if (and (map? v) (every? keyword? (keys v)))
+              (merge m (prepend-keys (name k) (flatten-ns v)))
+              (conj m pair)))
+    {}
+    m))
+
+(defn merge-config [config env]
+  (let [env-order (concat (get-in config [env :inherit]) [env])]
+    (apply merge (map config env-order))))
+
+(defn ns-contains? [nspace sym]
+  (and (namespace sym)
+    (let [segments (str/split (name nspace) #"\.")]
+      (= segments (take (count segments) (str/split (namespace sym) #"\."))))))
+
+(defn select-as [m key-map]
+  (-> m
+    (select-keys (keys key-map))
+    (set/rename-keys key-map)))
+
+(defn select-ns [m nspace]
+  (select-keys m (filter #(ns-contains? nspace (symbol %)) (keys m))))
+
+(defn ns-parts [nspace]
+  (if (nil? nspace)
+    []
+    (some-> nspace
+      str
+      not-empty
+      (str/split #"\.")
+      )))
+
+(defn select-ns-as [m ns-from ns-to]
+  (map-keys
+    (fn [k]
+      (let [new-ns-parts (->> (ns-parts (namespace k))
+                           (drop (count (ns-parts ns-from)))
+                           (concat (ns-parts ns-to)))]
+        (if (empty? new-ns-parts)
+          (keyword (name k))
+          (keyword (str/join "." new-ns-parts) (name k)))))
+    (select-ns m ns-from)))

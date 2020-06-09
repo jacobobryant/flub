@@ -1,5 +1,5 @@
 ```clojure
-trident/<artifact> {:mvn/version "0.3.0"}
+trident/<artifact> {:mvn/version "0.3.1"}
 ```
 
 # Trident
@@ -18,21 +18,21 @@ example, `{trident/cli {:mvn/version "<version>"}}` will give you access to the
 
  - [`trident/repl`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.repl). A handful of convenience functions for use at the repl.
  - [`trident/util`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.util). A collection of utility functions & macros.
- - [`trident/cli`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cli) (includes `util`). Makes it easy to define and reuse CLIs for tools.deps-based build tasks.
- - [`trident/ion-dev`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion-dev) (includes `cli`). Stuff for ion development.
- - [`trident/build`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.build) (includes `util`, `cli`). A collection of build tasks made with `trident/cli`.
- - [`trident/datomic`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic) (includes `util`). Janky file-based persistence for Datomic Free.
- - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud) (includes `util`). Tools for Datomic Cloud.
+ - [`trident/cli`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cli). Makes it easy to define and reuse CLIs for tools.deps-based build tasks.
+ - [`trident/jwt`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.jwt). (En|de)code JWTs.
+ - [`trident/ion-dev`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion-dev). Stuff for ion development.
+ - [`trident/build`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.build). A collection of build tasks made with `trident/cli`.
+ - [`trident/datomic`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic). Janky file-based persistence for Datomic Free.
+ - [`trident/datomic-cloud`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datomic-cloud). Tools for Datomic Cloud.
  - [`trident/ring`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ring). Some Ring middleware.
  - [`trident/firebase`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.firebase). Functions for authenticating Firebase user tokens.
  - [`trident/firestore`](doc/firestore.md). A wrapper for Firestore.
- - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion) (includes `util`). Utilities for working with Datomic Ions
- - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web) (includes `util`, `datomic-cloud`, `firebase`, `ion`, `ring`). Highly contrived web framework.
+ - [`trident/ion`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.ion). Utilities for working with Datomic Ions
+ - [`trident/web`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.web). Highly contrived web framework.
  - [`trident/staticweb`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.staticweb). Tools for making static websites
- - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript) (includes `util`). Frontend tools for syncing Datascript with Datomic.
- - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views) (includes `util`). Some Reagent components and stuff.
+ - [`trident/datascript`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.datascript). Frontend tools for syncing Datascript with Datomic.
+ - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views). Some Reagent components and stuff.
  - [`trident/cljs-http`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cljs-http). Slight additions to `cljs-http`
- - `trident/frontend` (includes `util`, `datascript`, `views`, `cljs-http`). Just a bundle of other artifacts.
 
 Also see [`trident.cli` Getting Started](doc/cli.md).
 

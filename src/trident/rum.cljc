@@ -2,6 +2,8 @@
   (:require
     [rum.core :as rum :refer [defc defcs reactive react]]))
 
+(def html rum/render-static-markup)
+
 (defn locals [& args]
   (->> args
     (partition 2)
@@ -58,3 +60,6 @@
    [:div.spinner-border.text-primary.mx-auto
     {:role "status"}
     [:span.sr-only "Loading..."]]])
+
+(defn unsafe [m html]
+  (merge m {:dangerouslySetInnerHTML {:__html html}}))
