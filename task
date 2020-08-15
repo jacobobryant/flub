@@ -11,4 +11,9 @@ dev () {
   clj -Adev "$@" -e "(init)" -r
 }
 
+deploy () {
+  repl mono reset
+  repl -w repl:util:jwt:rum:staticweb:cljs-http:cli:build:ring:firebase:firestore:views:ion:ion-dev:datascript:datomic:datomic-cloud:web:frontend:docs deploy
+}
+
 "$@"
