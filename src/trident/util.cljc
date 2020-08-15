@@ -415,11 +415,11 @@
 (defn assoc-some [m & kvs]
   (apply assoc-pred m some? kvs))
 
+; idk why, but fully-qualifying catchall-js prevents compiler warnings.
 (defn emptyish? [x]
   "Like empty?, but return false whenever empty? would throw an exception."
   (boolean (#?(:clj catchall :cljs trident.util/catchall-js) (empty? x))))
 
-; idk why, but fully-qualifying catchall-js prevents compiler warnings.
 (defn assoc-not-empty [m & kvs]
   (apply assoc-pred m #(not (emptyish? %)) kvs))
 
@@ -774,7 +774,9 @@
   (let [all-keys (->> (concat req-un opt-un)
                    (map (comp keyword name))
                    (concat req opt))]
-    (s/and #(= % (select-keys % all-keys))
+    (s/and
+      map?
+      #(= % (select-keys % all-keys))
       (eval `(s/keys :req ~req :opt ~opt :req-un ~req-un :opt-un ~opt-un)))))
 
 #?(:clj (defmacro sdefs [& forms]
