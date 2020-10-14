@@ -34,23 +34,6 @@ example, `{trident/cli {:mvn/version "<version>"}}` will give you access to the
  - [`trident/views`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.views). Some Reagent components and stuff.
  - [`trident/cljs-http`](https://cljdoc.org/d/trident/docs/CURRENT/api/trident.cljs-http). Slight additions to `cljs-http`
 
-Also see [`trident.cli` Getting Started](doc/cli.md).
-
-## Projects using Trident
-
- - [Findka](https://findka.com), a cross-domain recommender system.
- - [Lagukan](https://lagukan.com), a music recommender system.
- - [FlexBudget](https://github.com/jacobobryant/flexbudget), a [flexible budgeting app](https://notjust.us).
-
-(All mine so far).
-
-## Contact
-
-`#trident` on [Clojurians Slack](http://clojurians.net)
-
-## Self-promotion
-
-If you want to support my work, [follow me](https://findka.com/u/jobryant) on Findka.
 
 ## License
 
