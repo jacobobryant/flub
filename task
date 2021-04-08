@@ -1,19 +1,37 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bb
+; vim: ft=clojure
+(ns user
+  (:require
+    [clojure.pprint :refer [pprint]]))
 
-repl () {
-  GRENCH_PORT=7800 grench main trident.cli.util/-main "$PWD" trident.build/-main "$@"
-}
+(def git-url "https://github.com/jacobobryant/flub")
 
-dev () {
-  cd target/$1
-  shift
-  clj -Adev "$@" -e "(init)" -r
-}
+(defn get-ancestors [get-parents children]
+  (into (set children)
+    (some->> children
+      (mapcat get-parents)
+      distinct
+      not-empty
+      (apply get-ancestors))))
 
-deploy () {
-  repl mono reset
-  repl -w repl:util:jwt:rum:staticweb:cljs-http:cli:build:ring:firebase:firestore:views:ion:ion-dev:datascript:datomic:datomic-cloud:web:frontend:docs deploy
-}
+(defn sync []
+  (let [{:keys [projects deps]} (edn/read-string (slurp "flub.edn"))
+        sha (str/trim (:out (shell/sh "git" "rev-parse" "HEAD")))]
+    (doseq [[proj-name config] projects
+            :let [dir (str proj-name)
+                  proj-ancestors (get-ancestors
+                                   #(get-in projects [% :projects])
+                                   (:projects config))
+                  proj-deps {:deps (into
+                                     (select-keys deps (:deps config))
+                                     (for [p proj-ancestors]
+                                       [(symbol "flub" (str p)) {:git/url git-url
+                                                                 :deps/root (str p)
+                                                                 :sha sha}]))}]]
 
-"$@"
+      (when-not (fs/directory? dir)
+        (fs/create-dir dir))
+      (spit (fs/file dir "deps.edn") (with-out-str (pprint proj-deps))))))
+
+(let [[f & args] *command-line-args*]
+  (apply (resolve (symbol f)) args))

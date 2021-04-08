@@ -1,0 +1,53 @@
+(ns flub.middleware
+  (:require
+    [clojure.stacktrace :as st]
+    [flub.core :as flub]
+    [muuntaja.middleware :as muuntaja]
+    [ring.middleware.defaults :as rd]))
+
+(defn wrap-flat-keys [handler]
+  (fn [{:keys [session params] :as req}]
+    (some-> req
+      (merge
+        (flub/prepend-keys "session" session)
+        (flub/prepend-keys "params" params))
+      handler
+      (flub/nest-string-keys [:headers :cookies]))))
+
+(defn wrap-env [handler env]
+  (fn [req]
+    (handler (merge env req))))
+
+(defn wrap-internal-error [handler {:keys [on-error]}]
+  (fn [req]
+    (try
+      (handler req)
+      (catch Exception e
+        (st/print-stack-trace e)
+        (flush)
+        (on-error req e)))))
+
+(defn wrap-defaults [handler {:keys [session-store
+                                     secure
+                                     session-max-age
+                                     on-error
+                                     env]
+                              :or {session-max-age (* 60 60 24 90)}}]
+  (let [ring-defaults (-> (if secure
+                            rd/secure-site-defaults
+                            rd/site-defaults)
+                        (update :session merge {:store session-store
+                                                :cookie-name "ring-session"})
+                        (update-in [:session :cookie-attrs]
+                          merge {:max-age session-max-age
+                                 :same-site :lax})
+                        (update :security merge {:anti-forgery false
+                                                 :ssl-redirect false})
+                        (assoc :static false))]
+    (-> handler
+      (wrap-env env)
+      wrap-flat-keys
+      muuntaja/wrap-params
+      muuntaja/wrap-format
+      (rd/wrap-defaults ring-defaults)
+      (wrap-internal-error {:on-error on-error}))))

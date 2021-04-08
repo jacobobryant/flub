@@ -1,0 +1,4 @@
+{:deps
+ {buddy/buddy-sign {:mvn/version "3.3.0"},
+  clj-http/clj-http {:mvn/version "3.10.0"},
+  lambdaisland/uri {:mvn/version "1.4.54"}}}
