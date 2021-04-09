@@ -4,4 +4,4 @@
   flub/core
   {:git/url "https://github.com/jacobobryant/flub",
    :deps/root "core",
-   :sha "fcc8ee021bd821047ae41a9cbea079885d241458"}}}
+   :sha "bed21db0add4d739b6d5436aac68a01e56c68cde"}}}
