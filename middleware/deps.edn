@@ -1,3 +1,7 @@
 {:deps
  {metosin/muuntaja {:mvn/version "0.6.7"},
-  ring/ring-defaults {:mvn/version "0.3.2"}}}
+  ring/ring-defaults {:mvn/version "0.3.2"},
+  flub/core
+  {:git/url "https://github.com/jacobobryant/flub",
+   :deps/root "core",
+   :sha "fcc8ee021bd821047ae41a9cbea079885d241458"}}}
