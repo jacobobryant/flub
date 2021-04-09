@@ -117,10 +117,6 @@ either.
 A single function `assert` which throws an exception (with human-readable
 explanation) if the given value doesn't conform to the given Malli schema.
 
-This would make a lot of sense to throw in `flub.extra`; however, I wanted to
-use it from `flub.crux`, and I also wanted to make it available without
-depending on Crux.
-
 ## Releasing
 
 In case you want to use a similar setup for your own collection of libraries,
