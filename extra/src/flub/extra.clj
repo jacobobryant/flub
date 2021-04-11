@@ -30,5 +30,5 @@
        :form-params (merge {:from from} opts)})
     true
     (catch Exception e
-      (println (:body (ex-data e)))
+      (println "send-mailgun failed:" (:body (ex-data e)))
       false)))
