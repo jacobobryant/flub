@@ -87,8 +87,7 @@
 
 (defn submit-tx [{:keys [flub.crux/node] :as opts} flub-tx]
   (crux/submit-tx node
-    (doto (normalize-tx (flub/select-ns-as opts 'flub.malli nil) flub-tx)
-      flub/pprint)))
+    (normalize-tx (flub/select-ns-as opts 'flub.malli nil) flub-tx)))
 
 (defn submit-await-tx [{:keys [flub.crux/node] :as opts} flub-tx]
   (crux/await-tx node (submit-tx opts flub-tx)))
