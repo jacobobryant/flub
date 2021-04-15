@@ -46,32 +46,16 @@
         (.close @db))
       resp)))
 
-(defn q [db {:keys [q-fn find args]
-             :or {q-fn crux/q} :as query}]
-  (let [has-args (contains? query :args)
-        query (cond-> query
-                has-args (update :args vec)
-                true (update :where vec)
-                true (dissoc :q-fn))]
-    (when (or (not has-args) (not-empty args))
-      (if (symbol? find)
-        (map first (q-fn db (update query :find vector)))
-        (q-fn db query)))))
-
-(defn lazy-q [db {:keys [find] :as query} f]
-  (with-open [results (q db
-                        (cond-> query
-                          (symbol? find) (update :find vector)
-                          true (assoc :q-fn crux/open-q)))]
-    (f (cond->> (iterator-seq results)
-         (symbol? find) (map first)))))
+(defn lazy-q [db query f]
+  (with-open [results (crux/open-q db query)]
+    (f (iterator-seq results))))
 
 (defn q-entity [db kvs]
   (ffirst
-    (q db
+    (crux/q db
       {:find '[(pull doc [*])]
-       :where (for [kv kvs]
-                (into ['doc] kv))})))
+       :where (vec (for [kv kvs]
+                     (into ['doc] kv)))})))
 
 (defn normalize-tx [malli-opts flub-tx]
   (for [args flub-tx]
