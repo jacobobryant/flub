@@ -22,10 +22,10 @@
   (fn [req]
     (try
       (handler req)
-      (catch Exception e
-        (st/print-stack-trace e)
+      (catch Throwable t
+        (st/print-stack-trace t)
         (flush)
-        (on-error req e)))))
+        (on-error req t)))))
 
 (defn wrap-defaults [handler {:keys [session-store
                                      secure
