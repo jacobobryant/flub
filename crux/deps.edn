@@ -5,8 +5,8 @@
   flub/malli
   {:git/url "https://github.com/jacobobryant/flub",
    :deps/root "malli",
-   :sha "be1e6ac49050c9f8c6d92d1b6aef9e46aa1cf384"},
+   :sha "511627a219fef33dfabbaf8aea425e9cf31870b8"},
   flub/core
   {:git/url "https://github.com/jacobobryant/flub",
    :deps/root "core",
-   :sha "be1e6ac49050c9f8c6d92d1b6aef9e46aa1cf384"}}}
+   :sha "511627a219fef33dfabbaf8aea425e9cf31870b8"}}}
