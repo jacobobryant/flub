@@ -1,3 +1,9 @@
+# Moved to Biff
+
+I was going to turn [Biff](https://biff.findka.com) into just a project template that
+used the libraries in this repo. However I decided that would make things unecessarily confusing
+for new users, so I've moved everything here to the [Biff repo](https://github.com/jacobobryant/biff).
+
 # Flub
 
 > During a big rock show, you can flub a few things and nobody will hear it,
